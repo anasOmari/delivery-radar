@@ -63,6 +63,11 @@ function friendlyError(message: string, locale: string): string {
   if (m.includes('email not confirmed')) {
     return ar ? 'تحقق من بريدك واضغط رابط التفعيل، ثم سجّل الدخول.' : 'Check your inbox for the confirmation link, then log in.';
   }
+  if (m.includes('rate limit') || m.includes('over_email') || m.includes('too many')) {
+    return ar
+      ? 'تم تجاوز حد إرسال رسائل التفعيل المؤقت (Supabase المجاني يسمح بعدد قليل كل ساعة). انتظر ساعة ثم أعد المحاولة، أو عطّل "تأكيد البريد" في Supabase للدخول الفوري.'
+      : 'Signup email limit reached (free Supabase allows only a few per hour). Wait about an hour and retry, or turn off "Confirm email" in Supabase for instant access.';
+  }
   if (m.includes('password')) {
     return ar ? 'كلمة المرور غير صالحة (6 أحرف على الأقل).' : 'Invalid password (min 6 characters).';
   }
