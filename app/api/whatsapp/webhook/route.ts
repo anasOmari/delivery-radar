@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processChatbotMessage } from '@/lib/chatbotEngine';
 import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
-import { getServerWhatsAppConfig } from '../config/route';
+import { getServerWhatsAppConfigAsync } from '../config/route';
 
 export async function GET(req: NextRequest) {
   return NextResponse.json({
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No readable text in message' });
     }
 
-    // Load server config
-    const config = getServerWhatsAppConfig();
+    // Load server config from Supabase / env
+    const config = await getServerWhatsAppConfigAsync();
     const green = config.greenapi;
 
     if (!green?.idInstance || !green?.apiTokenInstance) {
