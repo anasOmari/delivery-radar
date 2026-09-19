@@ -20,7 +20,7 @@ export async function logWhatsAppMessageToSupabase(params: {
   leadName?: string;
 }) {
   try {
-    const { error } = await supabase.from('whatsapp_messages').insert([
+    const { data, error } = await supabase.from('whatsapp_messages').insert([
       {
         phone: params.phone,
         message_text: params.messageText,
@@ -29,12 +29,62 @@ export async function logWhatsAppMessageToSupabase(params: {
         lead_name: params.leadName || null,
         created_at: new Date().toISOString(),
       },
-    ]);
+    ]).select();
+
     if (error) {
       console.warn('Supabase log message error:', error.message);
+    } else {
+      console.log('Logged message to Supabase successfully:', data);
     }
   } catch (e) {
     console.warn('Failed to log message to Supabase:', e);
+  }
+}
+
+/**
+ * Save WhatsApp Config directly to Supabase app_settings table
+ */
+export async function saveWhatsAppConfigToSupabase(config: any) {
+  try {
+    const { data, error } = await supabase.from('app_settings').upsert(
+      {
+        key: 'whatsapp_config',
+        value: config,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' }
+    ).select();
+
+    if (error) {
+      console.warn('Supabase save config error:', error.message);
+      return false;
+    }
+    console.log('Saved config to Supabase app_settings:', data);
+    return true;
+  } catch (e) {
+    console.warn('Failed to save config to Supabase:', e);
+    return false;
+  }
+}
+
+/**
+ * Fetch WhatsApp Config from Supabase app_settings table
+ */
+export async function getWhatsAppConfigFromSupabase() {
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'whatsapp_config')
+      .single();
+
+    if (error || !data?.value) {
+      return null;
+    }
+    return data.value;
+  } catch (e) {
+    console.warn('Failed to fetch config from Supabase:', e);
+    return null;
   }
 }
 

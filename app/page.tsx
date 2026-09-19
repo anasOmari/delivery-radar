@@ -33,6 +33,7 @@ import {
   autoSaveLeadsToVault, 
   getSeenPlaceIds 
 } from '@/lib/leadVault';
+import { syncLeadsToSupabase } from '@/lib/supabase';
 
 export default function Home() {
   const { t, locale, dir } = useLanguage();
@@ -102,9 +103,36 @@ export default function Home() {
           };
         });
         setLeads(scored);
+        syncLeadsToSupabase(
+          scored.map((l) => ({
+            name: l.name,
+            phone: l.phone,
+            city: l.city || 'عمان',
+            category: l.category,
+            rating: l.rating,
+            address: l.address,
+            status: l.status,
+            notes: l.notes,
+            opportunity_score: l.opportunityScore,
+          }))
+        );
       } else if (vault.length > 0) {
         // Fallback to vault if saved leads empty
-        setLeads(vault.slice(0, 30));
+        const initialSlice = vault.slice(0, 30);
+        setLeads(initialSlice);
+        syncLeadsToSupabase(
+          initialSlice.map((l) => ({
+            name: l.name,
+            phone: l.phone,
+            city: l.city || 'عمان',
+            category: l.category,
+            rating: l.rating,
+            address: l.address,
+            status: l.status,
+            notes: l.notes,
+            opportunity_score: l.opportunityScore,
+          }))
+        );
       } else {
         const scoredInitial = INITIAL_MOCK_LEADS.map(l => {
           const opp = calculateOpportunity(l);
@@ -113,6 +141,19 @@ export default function Home() {
         setLeads(scoredInitial);
         autoSaveLeadsToVault(scoredInitial);
         setVaultCount(scoredInitial.length);
+        syncLeadsToSupabase(
+          scoredInitial.map((l) => ({
+            name: l.name,
+            phone: l.phone,
+            city: l.city || 'عمان',
+            category: l.category,
+            rating: l.rating,
+            address: l.address,
+            status: l.status,
+            notes: l.notes,
+            opportunity_score: l.opportunityScore,
+          }))
+        );
       }
     } catch (e) {
       console.error('Error loading state from localStorage:', e);
@@ -138,6 +179,21 @@ export default function Home() {
     } catch (e) {
       console.error('Error saving leads to localStorage:', e);
     }
+    try {
+      syncLeadsToSupabase(
+        newLeads.map((l) => ({
+          name: l.name,
+          phone: l.phone,
+          city: l.city || activeCity,
+          category: l.category,
+          rating: l.rating,
+          address: l.address,
+          status: l.status,
+          notes: l.notes,
+          opportunity_score: l.opportunityScore,
+        }))
+      );
+    } catch {}
   };
 
   const handleSaveApiKey = (key: string) => {

@@ -31,6 +31,7 @@ import {
   getWhatsAppConfig,
   saveWhatsAppConfig,
 } from '@/lib/whatsappProviders';
+import { saveWhatsAppConfigToSupabase, getWhatsAppConfigFromSupabase } from '@/lib/supabase';
 import { ChatbotModal } from './ChatbotModal';
 
 interface WhatsAppSettingsModalProps {
@@ -49,29 +50,35 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
 
-  // Sync server config on mount
+  // Sync Supabase & server config on mount
   React.useEffect(() => {
-    fetch('/api/whatsapp/config')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.config?.greenapi?.idInstance) {
-          setConfig((prev) => {
-            const merged: WhatsAppConfig = {
-              ...prev,
-              provider: prev.provider === 'none' ? 'greenapi' : prev.provider,
-              greenapi: {
-                ...prev.greenapi,
-                idInstance: prev.greenapi?.idInstance || data.config.greenapi.idInstance,
-                apiTokenInstance: prev.greenapi?.apiTokenInstance || data.config.greenapi.apiTokenInstance,
-                apiUrl: prev.greenapi?.apiUrl || data.config.greenapi.apiUrl,
-              },
-            };
-            saveWhatsAppConfig(merged);
-            return merged;
-          });
+    async function loadConfig() {
+      try {
+        const dbConfig = await getWhatsAppConfigFromSupabase();
+        if (dbConfig && dbConfig.greenapi?.idInstance) {
+          setConfig((prev) => ({
+            ...prev,
+            ...dbConfig,
+            provider: dbConfig.provider || 'greenapi',
+          }));
+          saveWhatsAppConfig(dbConfig);
+          return;
         }
-      })
-      .catch(() => {});
+      } catch {}
+
+      try {
+        const r = await fetch('/api/whatsapp/config');
+        const data = await r.json();
+        if (data?.config?.greenapi?.idInstance) {
+          setConfig((prev) => ({
+            ...prev,
+            ...data.config,
+            provider: data.config.provider || 'greenapi',
+          }));
+        }
+      } catch {}
+    }
+    loadConfig();
   }, []);
 
   // Dynamic sample preview lead
@@ -131,9 +138,19 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
     setTimeout(() => setCopiedWebhook(false), 2000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     saveWhatsAppConfig(config);
     setSaveFeedback(true);
+    try {
+      await saveWhatsAppConfigToSupabase(config);
+      await fetch('/api/whatsapp/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+    } catch (e) {
+      console.warn('Config save error:', e);
+    }
     if (onSaved) onSaved(config);
     setTimeout(() => {
       onClose();
