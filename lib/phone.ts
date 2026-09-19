@@ -1,5 +1,7 @@
 'use client';
 
+/** Phone helpers (used for the optional phone field on signup). */
+
 export function normalizePhone(input: string): string {
   if (!input) return '';
   // Keep digits only, preserve leading + info separately
@@ -37,18 +39,4 @@ export function phoneValidationError(input: string, locale: 'ar' | 'en' = 'ar'):
     return locale === 'ar' ? 'رقم الهاتف طويل جداً (15 رقم كحد أقصى)' : 'Mobile number is too long (max 15 digits)';
   }
   return null;
-}
-
-/**
- * Map a mobile number to a synthetic email so Supabase email/password
- * auth can be used with the phone as the username (no SMS provider needed).
- */
-export function phoneToEmail(phone: string): string {
-  const digits = digitsOnly(phone);
-  return `${digits}@phone.leadradar.app`;
-}
-
-export function formatPhoneDisplay(phone: string): string {
-  const n = normalizePhone(phone);
-  return n.startsWith('+') ? n : n;
 }

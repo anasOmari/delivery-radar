@@ -3,7 +3,7 @@ export type Locale = 'ar' | 'en';
 export const translations: Record<Locale, Record<string, string>> = {
   ar: {
     // App Branding
-    'app.name': 'رادار العملاء',
+    'app.name': 'خدمات قطرة الندى للتوصيل',
     'app.tagline': 'منصة B2B لاستخراج العملاء وإدارة المبيعات',
     'app.description': 'نظام بحث واستخراج أرقام تلفونات المحلات والشركات من خرائط جوجل وتسويق الواتساب والمبيعات',
 
@@ -346,7 +346,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
   en: {
     // App Branding
-    'app.name': 'LeadRadar',
+    'app.name': 'Qatrat Al-Nada Delivery',
     'app.tagline': 'B2B Lead Generation & Sales Platform',
     'app.description': 'Google Maps business data extraction, WhatsApp marketing and sales pipeline management',
 

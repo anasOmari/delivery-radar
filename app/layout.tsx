@@ -3,8 +3,8 @@ import './globals.css';
 import { ClientLayout } from './ClientLayout';
 
 export const metadata: Metadata = {
-  title: 'LeadRadar | B2B Lead Generation & Sales Platform',
-  description: 'Google Maps business data extraction, WhatsApp marketing and sales pipeline management',
+  title: 'خدمات قطرة الندى للتوصيل | منصة استخراج العملاء وإدارة المبيعات',
+  description: 'نظام استخراج أرقام تلفونات المحلات والشركات وتسويق الواتساب وإدارة المبيعات',
 };
 
 export default function RootLayout({

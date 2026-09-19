@@ -3,47 +3,51 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { normalizePhone, phoneToEmail } from '@/lib/phone';
+import { normalizePhone } from '@/lib/phone';
 
 export interface AuthUser {
   id: string;
-  phone: string;
+  email: string;
   name?: string | null;
-  email?: string | null;
+  phone?: string | null;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  signUpWithPhone: (params: { phone: string; password: string; name?: string }) => Promise<{ error: string | null }>;
-  signInWithPhone: (params: { phone: string; password: string }) => Promise<{ error: string | null }>;
+  signUpWithEmail: (params: { email: string; password: string; name?: string; phone?: string }) => Promise<{ error: string | null }>;
+  signInWithEmail: (params: { email: string; password: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signUpWithPhone: async () => ({ error: 'not-initialized' }),
-  signInWithPhone: async () => ({ error: 'not-initialized' }),
+  signUpWithEmail: async () => ({ error: 'not-initialized' }),
+  signInWithEmail: async () => ({ error: 'not-initialized' }),
   signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
+export function emailValidationError(input: string, locale: 'ar' | 'en' = 'ar'): string | null {
+  const value = input.trim();
+  if (!value) {
+    return locale === 'ar' ? 'البريد الإلكتروني مطلوب' : 'Email is required';
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+    return locale === 'ar' ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format';
+  }
+  return null;
+}
+
 function mapSessionToUser(sessionUser: SupabaseUser | null | undefined): AuthUser | null {
-  if (!sessionUser) return null;
-  const phone: string =
-    sessionUser.user_metadata?.phone ||
-    sessionUser.user_metadata?.mobile ||
-    (typeof sessionUser.email === 'string' && sessionUser.email.endsWith('@phone.leadradar.app')
-      ? `+${sessionUser.email.split('@')[0]}`
-      : '') ||
-    '';
+  if (!sessionUser || !sessionUser.email) return null;
   return {
     id: sessionUser.id,
-    phone: normalizePhone(phone),
+    email: sessionUser.email,
     name: sessionUser.user_metadata?.name ?? null,
-    email: sessionUser.email ?? null,
+    phone: sessionUser.user_metadata?.phone ?? sessionUser.user_metadata?.mobile ?? null,
   };
 }
 
@@ -51,18 +55,26 @@ function friendlyError(message: string, locale: string): string {
   const m = message.toLowerCase();
   const ar = locale === 'ar';
   if (m.includes('user already registered') || m.includes('already exists') || m.includes('duplicate')) {
-    return ar ? 'رقم الهاتف مسجل مسبقاً. سجّل الدخول بدلاً من ذلك.' : 'This mobile number is already registered. Please log in.';
+    return ar ? 'هذا البريد مسجل مسبقاً. سجّل الدخول بدلاً من ذلك.' : 'This email is already registered. Please log in.';
   }
   if (m.includes('invalid login credentials')) {
-    return ar ? 'رقم الهاتف أو كلمة المرور غير صحيحة.' : 'Incorrect mobile number or password.';
+    return ar ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' : 'Incorrect email or password.';
   }
   if (m.includes('email not confirmed')) {
-    return ar ? 'الحساب يحتاج تأكيد. عطّل تأكيد البريد في Supabase أو أكّد الحساب.' : 'Account needs confirmation. Disable email confirmation in Supabase or confirm the account.';
+    return ar ? 'تحقق من بريدك واضغط رابط التفعيل، ثم سجّل الدخول.' : 'Check your inbox for the confirmation link, then log in.';
   }
   if (m.includes('password')) {
     return ar ? 'كلمة المرور غير صالحة (6 أحرف على الأقل).' : 'Invalid password (min 6 characters).';
   }
   return message;
+}
+
+function currentLocale(): 'ar' | 'en' {
+  try {
+    return (localStorage.getItem('app_locale') as 'ar' | 'en') || 'ar';
+  } catch {
+    return 'ar';
+  }
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -91,60 +103,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUpWithPhone = useCallback(async ({ phone, password, name }: { phone: string; password: string; name?: string }) => {
-    const locale = (() => {
-      try {
-        return (localStorage.getItem('app_locale') as 'ar' | 'en') || 'ar';
-      } catch {
-        return 'ar' as const;
-      }
-    })();
+  const signUpWithEmail = useCallback(async ({ email, password, name, phone }: { email: string; password: string; name?: string; phone?: string }) => {
+    const locale = currentLocale();
     try {
-      const normalized = normalizePhone(phone);
-      const email = phoneToEmail(normalized);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPhone = phone ? normalizePhone(phone) : '';
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
-        options: { data: { phone: normalized, mobile: normalized, name: name || '' } },
+        options: { data: { name: name?.trim() || '', phone: cleanPhone, mobile: cleanPhone } },
       });
       if (error) return { error: friendlyError(error.message, locale) };
-      if (data.user) setUser(mapSessionToUser(data.user));
-      // If email confirmation is enabled, there will be no session — surface a helpful message
-      if (!data.session && data.user && !data.user.confirmed_at) {
-        try {
-          // Attempt immediate sign-in (works when autoconfirm is on)
-          const { data: s2, error: e2 } = await supabase.auth.signInWithPassword({ email, password });
-          if (!e2 && s2.user) {
-            setUser(mapSessionToUser(s2.user));
-            return { error: null };
-          }
-        } catch {}
-        return {
-          error:
-            locale === 'ar'
-              ? 'تم إنشاء الحساب. فعّل الدخول الفوري من Supabase (Auth → Providers → Email → Confirm email OFF) ثم سجّل الدخول.'
-              : 'Account created. Turn off email confirmation in Supabase (Auth → Providers → Email) then log in.',
-        };
+      if (data.session) {
+        setUser(mapSessionToUser(data.session.user));
+        return { error: null };
       }
-      return { error: null };
+      // Email confirmation enabled: no session until the user clicks the link.
+      setUser(null);
+      await supabase.auth.signOut().catch(() => {});
+      return {
+        error:
+          locale === 'ar'
+            ? 'تم إنشاء الحساب. تحقق من بريدك واضغط رابط التفعيل ثم سجّل الدخول.'
+            : 'Account created. Check your inbox for the confirmation link, then log in.',
+      };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'signup-failed';
       return { error: msg };
     }
   }, []);
 
-  const signInWithPhone = useCallback(async ({ phone, password }: { phone: string; password: string }) => {
-    const locale = (() => {
-      try {
-        return (localStorage.getItem('app_locale') as 'ar' | 'en') || 'ar';
-      } catch {
-        return 'ar' as const;
-      }
-    })();
+  const signInWithEmail = useCallback(async ({ email, password }: { email: string; password: string }) => {
+    const locale = currentLocale();
     try {
-      const normalized = normalizePhone(phone);
-      const email = phoneToEmail(normalized);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
       if (error) return { error: friendlyError(error.message, locale) };
       setUser(mapSessionToUser(data.user));
       return { error: null };
@@ -163,8 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, signUpWithPhone, signInWithPhone, signOut }),
-    [user, loading, signUpWithPhone, signInWithPhone, signOut]
+    () => ({ user, loading, signUpWithEmail, signInWithEmail, signOut }),
+    [user, loading, signUpWithEmail, signInWithEmail, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

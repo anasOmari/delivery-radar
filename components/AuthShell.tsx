@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Building2, Globe } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useBranding } from '@/lib/BrandingContext';
 import { Locale } from '@/lib/i18n';
 
 export const AuthShell: React.FC<{
@@ -13,6 +14,7 @@ export const AuthShell: React.FC<{
   footer?: React.ReactNode;
 }> = ({ title, subtitle, children, footer }) => {
   const { locale, setLocale } = useLanguage();
+  const { appName } = useBranding();
   const toggleLanguage = () => {
     const next: Locale = locale === 'ar' ? 'en' : 'ar';
     setLocale(next);
@@ -27,7 +29,7 @@ export const AuthShell: React.FC<{
               <Building2 size={19} />
             </span>
             <span className="auth-brand-text">
-              {locale === 'ar' ? 'رادار العملاء' : 'LeadRadar'}
+              {appName}
             </span>
           </Link>
           <button className="lang-toggle" onClick={toggleLanguage} type="button">

@@ -3,19 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Smartphone, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
-import { phoneValidationError, normalizePhone } from '@/lib/phone';
 
 export default function LoginPage() {
   const { locale } = useLanguage();
   const ar = locale === 'ar';
   const router = useRouter();
-  const { user, loading, signInWithPhone } = useAuth();
+  const { user, loading, signInWithEmail } = useAuth();
 
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +27,11 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const phoneErr = phoneValidationError(phone, locale);
-    if (phoneErr) return setError(phoneErr);
+    const emailErr = emailValidationError(email, locale);
+    if (emailErr) return setError(emailErr);
     if (!password) return setError(ar ? 'كلمة المرور مطلوبة' : 'Password is required');
     setSubmitting(true);
-    const { error: err } = await signInWithPhone({ phone: normalizePhone(phone), password });
+    const { error: err } = await signInWithEmail({ email, password });
     setSubmitting(false);
     if (err) return setError(err);
     router.replace('/');
@@ -41,7 +40,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title={ar ? 'تسجيل الدخول' : 'Log in'}
-      subtitle={ar ? 'ادخل برقم هاتفك المحمول وكلمة المرور' : 'Sign in with your mobile number and password'}
+      subtitle={ar ? 'ادخل ببريدك الإلكتروني وكلمة المرور' : 'Sign in with your email and password'}
       footer={
         <span>
           {ar ? 'ليس لديك حساب؟ ' : "Don't have an account? "}
@@ -53,20 +52,20 @@ export default function LoginPage() {
         {error && <div className="notification-banner banner-error" style={{ marginBottom: 0 }}><span>{error}</span></div>}
 
         <div className="form-group">
-          <label className="form-label" htmlFor="login-phone">
-            <Smartphone size={14} />
-            {ar ? 'رقم الهاتف المحمول (اسم المستخدم)' : 'Mobile number (username)'}
+          <label className="form-label" htmlFor="login-email">
+            <Mail size={14} />
+            {ar ? 'البريد الإلكتروني' : 'Email'}
           </label>
           <input
-            id="login-phone"
+            id="login-email"
             className="input-field auth-input-ltr"
-            type="tel"
-            inputMode="tel"
+            type="email"
+            inputMode="email"
             autoComplete="username"
             dir="ltr"
-            placeholder={ar ? 'مثال: 0791234567' : 'e.g. 0791234567'}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 

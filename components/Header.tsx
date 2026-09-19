@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu, LogOut, Smartphone } from 'lucide-react';
+import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu, LogOut, Mail, BadgeCheck } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Locale } from '@/lib/i18n';
+import { useBranding } from '@/lib/BrandingContext';
+import { BrandSettingsModal } from '@/components/BrandSettingsModal';
 
 interface HeaderProps {
   apiKey: string;
@@ -40,8 +42,10 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme
 }) => {
   const { locale, setLocale, t } = useLanguage();
+  const { appName, tagline } = useBranding();
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [showBrandModal, setShowBrandModal] = React.useState(false);
 
   const toggleLanguage = () => {
     const next: Locale = locale === 'ar' ? 'en' : 'ar';
@@ -60,15 +64,16 @@ export const Header: React.FC<HeaderProps> = ({
           <Building2 size={20} />
         </div>
         <div>
-          <h1 className="brand-title">{t('app.name')}</h1>
+          <h1 className="brand-title">{appName}</h1>
+          {tagline ? <div className="brand-subtitle">{tagline}</div> : null}
         </div>
       </div>
 
       <div className="header-utilities">
         {user && (
-          <span className="auth-user-pill" title={user.phone}>
-            <Smartphone size={14} />
-            <span dir="ltr">{user.phone}</span>
+          <span className="auth-user-pill" title={user.email}>
+            <Mail size={14} />
+            <span dir="ltr">{user.email}</span>
           </span>
         )}
         {user && (
@@ -117,6 +122,14 @@ export const Header: React.FC<HeaderProps> = ({
           }
         }}>
         {/* Actions */}
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowBrandModal(true)}
+          title={locale === 'ar' ? 'تغيير اسم النظام' : 'Change system name'}
+        >
+          <BadgeCheck size={16} />
+          <span>{locale === 'ar' ? 'اسم النظام' : 'System name'}</span>
+        </button>
         <button
           className="btn btn-secondary"
           onClick={onOpenChatbotModal}
@@ -216,6 +229,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         </div>
       </details>
+      {showBrandModal && <BrandSettingsModal onClose={() => setShowBrandModal(false)} />}
     </header>
   );
 };

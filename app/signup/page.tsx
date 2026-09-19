@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Smartphone, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Mail, Smartphone, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import { phoneValidationError, normalizePhone } from '@/lib/phone';
 
@@ -13,9 +13,10 @@ export default function SignupPage() {
   const { locale } = useLanguage();
   const ar = locale === 'ar';
   const router = useRouter();
-  const { user, loading, signUpWithPhone } = useAuth();
+  const { user, loading, signUpWithEmail } = useAuth();
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -30,8 +31,12 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const phoneErr = phoneValidationError(phone, locale);
-    if (phoneErr) return setError(phoneErr);
+    const emailErr = emailValidationError(email, locale);
+    if (emailErr) return setError(emailErr);
+    if (phone.trim()) {
+      const phoneErr = phoneValidationError(phone, locale);
+      if (phoneErr) return setError(phoneErr);
+    }
     if (password.length < 6) {
       return setError(ar ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
     }
@@ -39,10 +44,11 @@ export default function SignupPage() {
       return setError(ar ? 'تأكيد كلمة المرور غير متطابق' : 'Password confirmation does not match');
     }
     setSubmitting(true);
-    const { error: err } = await signUpWithPhone({
-      phone: normalizePhone(phone),
+    const { error: err } = await signUpWithEmail({
+      email,
       password,
       name: name.trim(),
+      phone: phone.trim() ? normalizePhone(phone) : undefined,
     });
     setSubmitting(false);
     if (err) return setError(err);
@@ -52,7 +58,7 @@ export default function SignupPage() {
   return (
     <AuthShell
       title={ar ? 'إنشاء حساب جديد' : 'Create account'}
-      subtitle={ar ? 'سجّل برقم هاتفك المحمول — سيكون هو اسم المستخدم الخاص بك' : 'Register with your mobile number — it will be your username'}
+      subtitle={ar ? 'سجّل ببريدك الإلكتروني — سيكون هو اسم المستخدم الخاص بك' : 'Register with your email — it will be your username'}
       footer={
         <span>
           {ar ? 'لديك حساب بالفعل؟ ' : 'Already have an account? '}
@@ -80,22 +86,39 @@ export default function SignupPage() {
         </div>
 
         <div className="form-group">
+          <label className="form-label" htmlFor="signup-email">
+            <Mail size={14} />
+            {ar ? 'البريد الإلكتروني (اسم المستخدم)' : 'Email (username)'}
+          </label>
+          <input
+            id="signup-email"
+            className="input-field auth-input-ltr"
+            type="email"
+            inputMode="email"
+            autoComplete="username"
+            dir="ltr"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <div className="form-group">
           <label className="form-label" htmlFor="signup-phone">
             <Smartphone size={14} />
-            {ar ? 'رقم الهاتف المحمول (اسم المستخدم)' : 'Mobile number (username)'}
+            {ar ? 'رقم الهاتف (اختياري)' : 'Phone number (optional)'}
           </label>
           <input
             id="signup-phone"
             className="input-field auth-input-ltr"
             type="tel"
             inputMode="tel"
-            autoComplete="username"
+            autoComplete="tel"
             dir="ltr"
             placeholder={ar ? 'مثال: 0791234567' : 'e.g. 0791234567'}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
-          <span className="subtext">{ar ? '7 إلى 15 رقماً، يُسمح بـ + والمسافات' : '7–15 digits, + and spaces allowed'}</span>
         </div>
 
         <div className="form-group">
