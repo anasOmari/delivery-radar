@@ -14,6 +14,11 @@ export interface ChatbotConfig {
   aiApiKey?: string;
   aiProvider?: 'gemini' | 'openai' | 'groq' | 'builtin';
   aiModel?: string;
+  customSystemPrompt?: string;
+  businessName?: string;
+  servicesText?: string;
+  pricingText?: string;
+  customRules?: string;
 }
 
 export interface ChatMessage {
@@ -40,7 +45,7 @@ const AMMAN_AREAS = [
   'الدوار الخامس', 'شارع الجامعة', 'الجامعة الأردنية', 'مكة مول', 'سيتي مول'
 ];
 
-const SYSTEM_PROMPT = `أنت المساعد الذكي الرسمي لـ "خدمات قطرة الندى للتوصيل والنقل السريع" في الأردن.
+export const DEFAULT_SYSTEM_PROMPT = `أنت المساعد الذكي الرسمي لـ "خدمات قطرة الندى للتوصيل والنقل السريع" في الأردن.
 
 📌 معلومات وأسعار خدمات قطرة الندى:
 1. الهوية: "خدمات قطرة الندى للتوصيل والنقل السريع" (تنبيه حاسم: يُمنع منعاً باتاً استخدام كلمة "شركة").
@@ -50,11 +55,37 @@ const SYSTEM_PROMPT = `أنت المساعد الذكي الرسمي لـ "خد�
    - توصيل داخل محافظة عمّان (من أي منطقة لأي منطقة بعمان): 3 دنانير فقط.
    - توصيل بين المحافظات (مثلاً من عمّان إلى العقبة أو إربد أو الزرقاء أو الكرك أو معان...): 5 دنانير فقط لأي محافظة!
 4. ميزتنا التنافسية الكبرى: الدفع فوري ومسبق كاش لصاحب المحل لحظة استلام الأوردر من محله مباشرة.
-5. هاتف الإدارة والتواصل المباشر: {MANAGER_PHONE}.
+5. الخدمات: توصيل وجبات مطاعم ساخنة، طرود متاجر وتجارة إلكترونية، نقل موظفين، مشاوير ركاب VIP، اشتراكات شهرية.
+6. هاتف الإدارة والتواصل المباشر: {MANAGER_PHONE}.
 
 📌 قواعد الإجابة:
 - إذا سأل العميل عن سعر مسار محدد (مثل: "من عمان للعقبة كم؟" أو "كم سعر التوصيل لاربد؟"): أجب مباشرة بالسعر الدقيق المحدد أعلاه وبكل وضوح، واعرض عليه إرسال كابتن فوراً.
 - تحدث بلهجة أردنية ودودة، محترمة، مهذبة، وسريعة الفهم مع إيموجيز مناسبة 🚗💨✨.`;
+
+function buildDynamicSystemPrompt(config?: ChatbotConfig): string {
+  const managerPhone = config?.managerPhone || '0788779463';
+
+  if (config?.customSystemPrompt && config.customSystemPrompt.trim().length >= 20) {
+    return config.customSystemPrompt.replace(/{MANAGER_PHONE}/g, managerPhone);
+  }
+
+  let prompt = DEFAULT_SYSTEM_PROMPT.replace(/{MANAGER_PHONE}/g, managerPhone);
+
+  if (config?.businessName) {
+    prompt += `\nاسم المشروع: ${config.businessName}`;
+  }
+  if (config?.servicesText) {
+    prompt += `\n\n📌 تفاصيل الخدمات المخصصة:\n${config.servicesText}`;
+  }
+  if (config?.pricingText) {
+    prompt += `\n\n💰 تفاصيل وتعديلات الأسعار المخصصة:\n${config.pricingText}`;
+  }
+  if (config?.customRules) {
+    prompt += `\n\n⚠️ توجيهات إضافية مخصصة للرد:\n${config.customRules}`;
+  }
+
+  return prompt;
+}
 
 /**
  * Query Google Gemini AI directly for a dynamic, human-like response
@@ -63,10 +94,10 @@ async function queryGeminiAI(
   prompt: string,
   history: Array<{ role: string; text: string }>,
   apiKey: string,
-  managerPhone: string
+  config?: ChatbotConfig
 ): Promise<string | null> {
   try {
-    const formattedSystem = SYSTEM_PROMPT.replace(/{MANAGER_PHONE}/g, managerPhone);
+    const formattedSystem = buildDynamicSystemPrompt(config);
     const contents: any[] = [];
 
     // Add recent history for context
@@ -425,7 +456,7 @@ export async function processChatbotMessageAI(
 
   // Try AI first if API Key is configured
   if (apiKey && apiKey.trim().length > 10) {
-    const aiReply = await queryGeminiAI(userText, history, apiKey.trim(), managerPhone);
+    const aiReply = await queryGeminiAI(userText, history, apiKey.trim(), config);
     if (aiReply && aiReply.length > 5) {
       history.push({ role: 'user', text: userText });
       history.push({ role: 'model', text: aiReply });

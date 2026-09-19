@@ -40,6 +40,11 @@ export interface WhatsAppConfig {
   chatbotGreeting?: string;
   aiApiKey?: string;
   aiProvider?: 'gemini' | 'openai' | 'groq' | 'builtin';
+  customSystemPrompt?: string;
+  businessName?: string;
+  servicesText?: string;
+  pricingText?: string;
+  customRules?: string;
 }
 
 export interface WhatsAppMessage {

@@ -828,6 +828,84 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                 </div>
               </div>
 
+              {/* AI Knowledge Base & Custom Training Card */}
+              <div className="studio-card" style={{ marginTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <Sparkles size={18} style={{ color: '#F59E0B' }} />
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {locale === 'ar' ? '🧠 تدريب وتعريف الذكاء الاصطناعي (AI Knowledge Base)' : 'AI Knowledge Base & Prompt Training'}
+                    </h4>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
+                      {locale === 'ar'
+                        ? 'تخصيص معلومات المشروع، الخدمات، والأسعار التي يجيب بها الذكاء الاصطناعي مباشرة من الموقع'
+                        : 'Control project identity, services, and pricing taught to the AI'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Business Identity */}
+                <div className="studio-field" style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    {locale === 'ar' ? 'اسم وهوية المشروع الرسمية' : 'Business Identity'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="خدمات قطرة الندى للتوصيل والنقل السريع"
+                    value={config.businessName || ''}
+                    onChange={e => setConfig(prev => ({ ...prev, businessName: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px' }}
+                  />
+                </div>
+
+                {/* Services Knowledge */}
+                <div className="studio-field" style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    {locale === 'ar' ? 'الخدمات المتاحة وتفاصيلها (يقرأها الذكاء الاصطناعي ويجيب بها)' : 'Available Services & Offerings'}
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="1. توصيل وجبات وأطعمة للمطاعم ساخنة وسريعة.&#10;2. شحن وتوصيل فوري لطرود المتاجر والأونلاين.&#10;3. عقود نقل وتوصيل موظفين وكوادر شركات.&#10;4. مشاوير ركاب خاصة VIP."
+                    value={config.servicesText || ''}
+                    onChange={e => setConfig(prev => ({ ...prev, servicesText: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem', lineHeight: '1.4' }}
+                  />
+                </div>
+
+                {/* Pricing Knowledge */}
+                <div className="studio-field" style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    {locale === 'ar' ? 'تعديلات الأسعار والعروض الخاصة' : 'Pricing Details & Special Offers'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="توصيل داخلي: 2 د.أ | عمّان: 3 د.أ | المحافظات (إربد، العقبة، الزرقاء): 5 د.أ | خصم خاص للمطاعم بأكثر من 20 طلب يومياً."
+                    value={config.pricingText || ''}
+                    onChange={e => setConfig(prev => ({ ...prev, pricingText: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem' }}
+                  />
+                </div>
+
+                {/* Custom Instructions / Tone */}
+                <div className="studio-field">
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    {locale === 'ar' ? 'توجيهات مخصصة لأسلوب رد الذكاء الاصطناعي (Custom System Prompt)' : 'Custom System Prompt & Persona'}
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="تحدث بلهجة أردنية ودودة ومحترمة. ركز دائماً على ميزة الدفع كاش مسبقاً لصاحب المحل، وإذا طلب العميل كابتن اطلب منه موقعه ورقم المستلم فوراً..."
+                    value={config.customRules || config.customSystemPrompt || ''}
+                    onChange={e => setConfig(prev => ({ ...prev, customRules: e.target.value, customSystemPrompt: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem' }}
+                  />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px', display: 'block' }}>
+                    {locale === 'ar'
+                      ? '💡 يمكنك كتابة أي معلومات أو عروض جديدة هنا وسيبدأ الذكاء الاصطناعي باستخدامها فوراً في كل ردوده على الواتساب!'
+                      : 'Any rules or knowledge added here are immediately injected into the AI for live customer replies.'}
+                  </span>
+                </div>
+              </div>
+
               {/* Green-API Webhook Instructions Box */}
               <div
                 style={{
