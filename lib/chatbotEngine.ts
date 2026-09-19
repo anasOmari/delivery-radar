@@ -84,19 +84,22 @@ async function queryGeminiAI(
       parts: [{ text: prompt }],
     });
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify({
         systemInstruction: {
           parts: [{ text: formattedSystem }],
         },
         contents: contents,
         generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 350,
+          temperature: 0.65,
+          maxOutputTokens: 450,
         },
       }),
     });
