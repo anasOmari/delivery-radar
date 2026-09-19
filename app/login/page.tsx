@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { OAuthButtons } from '@/components/OAuthButtons';
 import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
 
@@ -39,8 +40,8 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title={ar ? 'مرحباً بعودتك' : 'Welcome back'}
-      subtitle={ar ? 'ادخل ببريدك الإلكتروني للوصول إلى لوحتك' : 'Sign in with your email to reach your dashboard'}
+      title={ar ? 'تسجيل الدخول' : 'Log in'}
+      subtitle={ar ? 'ادخل ببريدك الإلكتروني وكلمة المرور' : 'Sign in with your email and password'}
       footer={
         <span>
           {ar ? 'ليس لديك حساب؟ ' : "Don't have an account? "}
@@ -110,6 +111,7 @@ export default function LoginPage() {
           )}
         </button>
       </form>
+      <OAuthButtons onError={setError} />
     </AuthShell>
   );
 }

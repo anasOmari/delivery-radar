@@ -36,11 +36,12 @@ import {
   getSeenPlaceIds 
 } from '@/lib/leadVault';
 import { syncLeadsToSupabase } from '@/lib/supabase';
+import { phoneValidationError } from '@/lib/phone';
 
 export default function Home() {
   const { t, locale, dir } = useLanguage();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updatePhone } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeCity, setActiveCity] = useState('عمان');
@@ -48,6 +49,48 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLiveApi, setIsLiveApi] = useState(false);
   const [apiNotification, setApiNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
+
+  // One-time phone prompt (OAuth users have no phone on their profile)
+  const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+  const [promptPhone, setPromptPhone] = useState('');
+  const [promptError, setPromptError] = useState<string | null>(null);
+  const [promptSaving, setPromptSaving] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !user || user.phone) return;
+    try {
+      if (localStorage.getItem('phone_prompt_dismissed') === '1') return;
+    } catch {}
+    setShowPhonePrompt(true);
+  }, [authLoading, user]);
+
+  const dismissPhonePrompt = () => {
+    setShowPhonePrompt(false);
+    try {
+      localStorage.setItem('phone_prompt_dismissed', '1');
+    } catch {}
+  };
+
+  const savePromptPhone = async () => {
+    setPromptError(null);
+    const err = phoneValidationError(promptPhone, locale);
+    if (err) {
+      setPromptError(err);
+      return;
+    }
+    setPromptSaving(true);
+    const { error } = await updatePhone(promptPhone);
+    setPromptSaving(false);
+    if (error) {
+      setPromptError(error);
+      return;
+    }
+    setShowPhonePrompt(false);
+    setApiNotification({
+      type: 'success',
+      message: locale === 'ar' ? 'تم حفظ رقم الهاتف على حسابك.' : 'Phone number saved to your account.',
+    });
+  };
 
   // Vault & Pagination States
   const [vaultCount, setVaultCount] = useState<number>(0);
@@ -582,6 +625,32 @@ export default function Home() {
       />
 
       <div className="app-main-content">
+        {showPhonePrompt && (
+          <div className="notification-banner banner-warning phone-prompt-banner">
+            <div className="phone-prompt-body">
+              <span>{locale === 'ar' ? 'أضف رقم هاتفك لإكمال حسابك (يُستخدم للتواصل والتنبيهات).' : 'Add your mobile number to complete your account (used for contact & alerts).'}</span>
+              <div className="phone-prompt-row">
+                <input
+                  className="input-field auth-input-ltr phone-prompt-input"
+                  type="tel"
+                  inputMode="tel"
+                  dir="ltr"
+                  placeholder={locale === 'ar' ? 'مثال: 0791234567' : 'e.g. 0791234567'}
+                  value={promptPhone}
+                  onChange={(e) => setPromptPhone(e.target.value)}
+                />
+                <button className="btn btn-primary btn-sm" onClick={savePromptPhone} disabled={promptSaving}>
+                  {promptSaving ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...') : t('action.save')}
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={dismissPhonePrompt}>
+                  {locale === 'ar' ? 'لاحقاً' : 'Later'}
+                </button>
+              </div>
+              {promptError && <span className="phone-prompt-error">{promptError}</span>}
+            </div>
+            <button className="btn-close" onClick={dismissPhonePrompt}>&times;</button>
+          </div>
+        )}
         {apiNotification && (
           <div className={`notification-banner banner-${apiNotification.type}`}>
             <div className="flex-align gap-2">

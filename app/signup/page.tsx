@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Smartphone, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { OAuthButtons } from '@/components/OAuthButtons';
 import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import { phoneValidationError, normalizePhone } from '@/lib/phone';
@@ -170,6 +171,7 @@ export default function SignupPage() {
           {submitting ? (ar ? 'جاري إنشاء الحساب...' : 'Creating account...') : ar ? 'إنشاء الحساب' : 'Sign up'}
         </button>
       </form>
+      <OAuthButtons onError={setError} />
     </AuthShell>
   );
 }

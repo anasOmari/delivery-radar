@@ -17,6 +17,8 @@ interface AuthContextType {
   loading: boolean;
   signUpWithEmail: (params: { email: string; password: string; name?: string; phone?: string }) => Promise<{ error: string | null }>;
   signInWithEmail: (params: { email: string; password: string }) => Promise<{ error: string | null }>;
+  signInWithOAuth: (provider: 'google') => Promise<{ error: string | null }>;
+  updatePhone: (phone: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -25,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signUpWithEmail: async () => ({ error: 'not-initialized' }),
   signInWithEmail: async () => ({ error: 'not-initialized' }),
+  signInWithOAuth: async () => ({ error: 'not-initialized' }),
+  updatePhone: async () => ({ error: 'not-initialized' }),
   signOut: async () => {},
 });
 
@@ -162,9 +166,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const signInWithOAuth = useCallback(async (provider: 'google') => {
+    const locale = currentLocale();
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
+      if (error) return { error: friendlyError(error.message, locale) };
+      // Success redirects the browser to the provider; no session yet.
+      return { error: null };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'oauth-failed';
+      return { error: msg };
+    }
+  }, []);
+
+  const updatePhone = useCallback(async (phone: string) => {
+    const locale = currentLocale();
+    try {
+      const clean = normalizePhone(phone);
+      const { data, error } = await supabase.auth.updateUser({ data: { phone: clean, mobile: clean } });
+      if (error) return { error: friendlyError(error.message, locale) };
+      setUser(mapSessionToUser(data.user));
+      return { error: null };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'update-failed';
+      return { error: msg };
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, signUpWithEmail, signInWithEmail, signOut }),
-    [user, loading, signUpWithEmail, signInWithEmail, signOut]
+    () => ({ user, loading, signUpWithEmail, signInWithEmail, signInWithOAuth, updatePhone, signOut }),
+    [user, loading, signUpWithEmail, signInWithEmail, signInWithOAuth, updatePhone, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
