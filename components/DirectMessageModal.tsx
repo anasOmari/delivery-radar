@@ -227,7 +227,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
               {/* Phone Input with validation check button */}
               <div>
                 <label className="input-label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <Phone size={13} style={{ color: '#25D366' }} />
+                  <Phone size={13} style={{ color: 'var(--whatsapp-color)' }} />
                   <span>{locale === 'ar' ? 'رقم هاتف المستلم' : 'Recipient Phone'} *</span>
                 </label>
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -356,7 +356,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
           {/* Preset Templates Selector */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Layers size={13} style={{ color: '#25D366' }} />
+              <Layers size={13} style={{ color: 'var(--whatsapp-color)' }} />
               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 {locale === 'ar' ? 'اختر نموذج الرسالة:' : 'Choose Message Template:'}
               </span>
@@ -371,8 +371,8 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
                     padding: '5px 10px',
                     borderRadius: '16px',
                     background: selectedTemplateId === tmpl.id ? 'rgba(37, 211, 102, 0.15)' : 'var(--bg-surface-elevated)',
-                    border: `1px solid ${selectedTemplateId === tmpl.id ? '#25D366' : 'var(--border-default)'}`,
-                    color: selectedTemplateId === tmpl.id ? '#25D366' : 'var(--text-secondary)',
+                    border: `1px solid ${selectedTemplateId === tmpl.id ? 'var(--whatsapp-color)' : 'var(--border-default)'}`,
+                    color: selectedTemplateId === tmpl.id ? 'var(--whatsapp-color)' : 'var(--text-secondary)',
                     fontSize: '0.78rem',
                     fontWeight: selectedTemplateId === tmpl.id ? 700 : 500,
                     cursor: 'pointer',
@@ -449,9 +449,9 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
                 onClick={handleSendViaAPI}
                 disabled={!recipientPhone.trim() || isSending}
                 style={{
-                  background: '#25D366',
+                  background: 'var(--whatsapp-button)',
                   color: '#fff',
-                  borderColor: '#25D366',
+                  borderColor: 'var(--whatsapp-button)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',

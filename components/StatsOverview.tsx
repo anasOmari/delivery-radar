@@ -43,7 +43,6 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
           <div className="stat-content">
             <span className="stat-label">{t('stats.total_leads')}</span>
             <h3 className="stat-value">{totalLeads}</h3>
-            <span className="stat-sub">{t('stats.total_leads.sub')}</span>
           </div>
         </div>
 
@@ -65,7 +64,6 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
           <div className="stat-content">
             <span className="stat-label">{t('stats.no_website')}</span>
             <h3 className="stat-value">{noWebsite}</h3>
-            <span className="stat-sub">{t('stats.no_website.sub')}</span>
           </div>
         </div>
 
@@ -100,7 +98,6 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
           <div className="stat-content">
             <span className="stat-label">{t('stats.followups_due')}</span>
             <h3 className="stat-value">{followupsDue}</h3>
-            <span className="stat-sub">{t('stats.followups_due.sub')}</span>
           </div>
         </div>
       </div>
@@ -139,10 +136,10 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
                   value={closeRate}
                   onChange={e => setCloseRate(Number(e.target.value))}
                 >
-                  <option value={5}>5% (Conservative)</option>
-                  <option value={10}>10% (Realistic)</option>
-                  <option value={15}>15% (Excellent)</option>
-                  <option value={25}>25% (Pro Team)</option>
+                  <option value={5}>5%</option>
+                  <option value={10}>10%</option>
+                  <option value={15}>15%</option>
+                  <option value={25}>25%</option>
                 </select>
               </div>
             </div>

@@ -276,7 +276,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
               whiteSpace: 'nowrap',
             }}
           >
-            <Zap size={15} style={{ color: activeTab === 'provider' ? '#25D366' : 'inherit' }} />
+            <Zap size={15} style={{ color: activeTab === 'provider' ? 'var(--whatsapp-color)' : 'inherit' }} />
             <span>{t('whatsapp.tab_connection')}</span>
             {config.provider === 'greenapi' && (
               <span
@@ -285,7 +285,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                   padding: '1px 6px',
                   borderRadius: '10px',
                   background: 'rgba(37, 211, 102, 0.2)',
-                  color: '#25D366',
+                  color: 'var(--whatsapp-color)',
                   fontWeight: 700,
                 }}
               >
@@ -313,7 +313,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
               whiteSpace: 'nowrap',
             }}
           >
-            <FileText size={15} style={{ color: activeTab === 'message' ? '#25D366' : 'inherit' }} />
+            <FileText size={15} style={{ color: activeTab === 'message' ? 'var(--whatsapp-color)' : 'inherit' }} />
             <span>{t('whatsapp.tab_message')}</span>
           </button>
 
@@ -336,7 +336,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
               whiteSpace: 'nowrap',
             }}
           >
-            <Bot size={15} style={{ color: activeTab === 'chatbot' ? '#25D366' : 'inherit' }} />
+            <Bot size={15} style={{ color: activeTab === 'chatbot' ? 'var(--whatsapp-color)' : 'inherit' }} />
             <span>{locale === 'ar' ? 'الشات بوت الذكي (AI Chatbot) 🤖' : 'Smart AI Chatbot 🤖'}</span>
           </button>
 
@@ -359,7 +359,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
               whiteSpace: 'nowrap',
             }}
           >
-            <Sliders size={15} style={{ color: activeTab === 'automation' ? '#25D366' : 'inherit' }} />
+            <Sliders size={15} style={{ color: activeTab === 'automation' ? 'var(--whatsapp-color)' : 'inherit' }} />
             <span>{t('whatsapp.tab_options')}</span>
           </button>
         </div>
@@ -412,7 +412,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: isSelected ? (isGreen ? '#25D366' : 'var(--brand-primary)') : 'var(--border-default)',
+                                background: isSelected ? (isGreen ? 'var(--whatsapp-color)' : 'var(--brand-primary)') : 'var(--border-default)',
                               }}
                             />
                             <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
@@ -426,7 +426,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 background: 'rgba(37, 211, 102, 0.2)',
-                                color: '#25D366',
+                                color: 'var(--whatsapp-color)',
                                 fontWeight: 700,
                               }}
                             >
@@ -639,7 +639,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                           transition: 'all 0.15s',
                         }}
                       >
-                        <Sparkles size={11} style={{ color: '#25D366' }} />
+                        <Sparkles size={11} style={{ color: 'var(--whatsapp-color)' }} />
                         <span style={{ fontWeight: 600 }}>{`{${item.tag}}`}</span>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.72rem' }}>({item.label})</span>
                       </button>
@@ -676,7 +676,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <Eye size={14} style={{ color: '#25D366' }} />
+                  <Eye size={14} style={{ color: 'var(--whatsapp-color)' }} />
                   <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {locale === 'ar' ? 'معاينة الرسالة الحية كما ستصل للعميل:' : 'Live Message Preview:'}
                   </span>
@@ -720,7 +720,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                       width: '36px',
                       height: '36px',
                       borderRadius: '50%',
-                      background: '#25D366',
+                      background: 'var(--whatsapp-button)',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
@@ -743,7 +743,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                   type="button"
                   className="btn btn-whatsapp btn-sm"
                   onClick={() => setShowSimulator(true)}
-                  style={{ background: '#25D366', color: '#fff', fontWeight: 700, gap: '6px' }}
+                  style={{ background: 'var(--whatsapp-button)', color: '#fff', fontWeight: 700, gap: '6px' }}
                 >
                   <Bot size={15} />
                   <span>{locale === 'ar' ? 'فتح المحاكي الحي' : 'Open Simulator'}</span>
@@ -916,7 +916,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                  <Globe size={16} style={{ color: '#25D366' }} />
+                  <Globe size={16} style={{ color: 'var(--whatsapp-color)' }} />
                   <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                     {locale === 'ar' ? 'رابط الـ Webhook للربط مع Green-API:' : 'Webhook URL for Green-API:'}
                   </strong>
@@ -1012,7 +1012,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                     <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>
                       {locale === 'ar' ? 'الفارق الزمني بين الرسائل في الحملات' : 'Delay Between Messages'}
                     </strong>
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#25D366' }}>
+                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--whatsapp-color)' }}>
                       {config.sendDelaySeconds || 2} {locale === 'ar' ? 'ثواني' : 'seconds'}
                     </span>
                   </div>
@@ -1049,7 +1049,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                 {isTesting ? (
                   <span className="spin" style={{ display: 'inline-block' }}>&#8635;</span>
                 ) : (
-                  <Check size={15} style={{ color: '#25D366' }} />
+                  <Check size={15} style={{ color: 'var(--whatsapp-color)' }} />
                 )}
                 <span>{isTesting ? t('apikey.testing') : (locale === 'ar' ? 'اختبار الربط مع Green-API' : 'Test Connection')}</span>
               </button>
@@ -1064,9 +1064,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
               className="btn btn-primary"
               onClick={handleSave}
               style={{
-                background: '#25D366',
+                background: 'var(--whatsapp-button)',
                 color: '#fff',
-                borderColor: '#25D366',
+                borderColor: 'var(--whatsapp-button)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',

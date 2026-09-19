@@ -2,6 +2,9 @@
 
 :root,
 [data-theme="dark"] {
+  color-scheme: dark;
+  --button-primary: #2563eb;
+  --whatsapp-button: #15803d;
   --bg-app: #0a0e1a;
   --bg-surface: #111827;
   --bg-surface-elevated: #1a2235;
@@ -14,9 +17,9 @@
 
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-tertiary: #94a3b8;
 
-  --brand-primary: #3b82f6;
+  --brand-primary: #60a5fa;
   --brand-primary-hover: #2563eb;
   --brand-primary-subtle: rgba(59, 130, 246, 0.12);
   --brand-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
@@ -33,7 +36,7 @@
   --status-blue-bg: rgba(56, 189, 248, 0.1);
   --status-blue-border: rgba(56, 189, 248, 0.25);
 
-  --status-purple: #a855f7;
+  --status-purple: #c084fc;
   --status-purple-bg: rgba(168, 85, 247, 0.1);
   --status-purple-border: rgba(168, 85, 247, 0.25);
 
@@ -58,6 +61,9 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
+  --button-primary: #2563eb;
+  --whatsapp-button: #15803d;
   --bg-app: #f0f4f8;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #f8fafc;
@@ -77,15 +83,15 @@
   --brand-primary-subtle: rgba(37, 99, 235, 0.08);
   --brand-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
 
-  --status-green: #059669;
+  --status-green: #047857;
   --status-green-bg: rgba(5, 150, 105, 0.08);
   --status-green-border: rgba(5, 150, 105, 0.2);
 
-  --status-amber: #d97706;
+  --status-amber: #b45309;
   --status-amber-bg: rgba(217, 119, 6, 0.08);
   --status-amber-border: rgba(217, 119, 6, 0.2);
 
-  --status-blue: #0284c7;
+  --status-blue: #0369a1;
   --status-blue-bg: rgba(2, 132, 199, 0.08);
   --status-blue-border: rgba(2, 132, 199, 0.2);
 
@@ -97,11 +103,11 @@
   --status-red-bg: rgba(220, 38, 38, 0.08);
   --status-red-border: rgba(220, 38, 38, 0.2);
 
-  --status-cyan: #0891b2;
+  --status-cyan: #0e7490;
   --status-cyan-bg: rgba(8, 145, 178, 0.08);
   --status-cyan-border: rgba(8, 145, 178, 0.2);
 
-  --whatsapp-color: #16a34a;
+  --whatsapp-color: #15803d;
   --whatsapp-bg: rgba(22, 163, 74, 0.08);
   --whatsapp-hover: #15803d;
 
@@ -355,7 +361,7 @@ body {
 }
 
 .btn-primary {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow-sm);
@@ -378,7 +384,7 @@ body {
 }
 
 .btn-whatsapp {
-  background: var(--whatsapp-color);
+  background: var(--whatsapp-button);
   color: #ffffff;
 }
 
@@ -948,7 +954,7 @@ body {
 }
 
 .selected-badge {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   padding: 2px 10px;
   border-radius: var(--radius-sm);
@@ -1478,9 +1484,9 @@ body {
   flex-shrink: 0;
 }
 
-.icon-excel { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.icon-excel { background: rgba(16, 185, 129, 0.12); color: var(--status-green); }
 .icon-vcf { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.icon-copy { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+.icon-copy { background: rgba(168, 85, 247, 0.12); color: var(--status-purple); }
 
 .card-info {
   flex: 1;
@@ -1530,8 +1536,8 @@ body {
   line-height: 1.1;
 }
 
-.score-good { color: #10b981; }
-.score-warn { color: #f59e0b; }
+.score-good { color: var(--status-green); }
+.score-warn { color: var(--status-amber); }
 .score-total { font-size: 0.9rem; font-weight: 600; opacity: 0.6; }
 
 .metric-label {
@@ -1549,8 +1555,8 @@ body {
   font-weight: 700;
 }
 
-.status-safe { color: #10b981; }
-.status-danger { color: #ef4444; }
+.status-safe { color: var(--status-green); }
+.status-danger { color: var(--status-red); }
 
 .metric-grade-text {
   font-size: 1.6rem;
@@ -1860,7 +1866,7 @@ body {
 }
 
 .whatsapp-tab-btn.active {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   border-color: var(--brand-primary);
 }
@@ -1964,7 +1970,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -2335,7 +2341,7 @@ body {
 }
 
 .preset-studio-btn.active {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   border-color: var(--brand-primary);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
@@ -3071,7 +3077,7 @@ body {
 }
 
 .limit-chip-btn.active {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   border-color: var(--brand-primary);
   color: #ffffff;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
@@ -3162,7 +3168,7 @@ body {
   flex-shrink: 0;
   padding: 3px 10px;
   border-radius: 14px;
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   font-size: 11px;
   font-weight: 700;
@@ -3315,7 +3321,7 @@ body {
 }
 
 .page-nav-btn.active {
-  background: var(--brand-primary);
+  background: var(--button-primary);
   color: #ffffff;
   border-color: var(--brand-primary);
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
@@ -3378,3 +3384,17 @@ body {
 
 
 
+
+/* Native controls share the active theme, including modal fields. */
+button, input, select, textarea { font: inherit; }
+input, select, textarea { accent-color: var(--button-primary); }
+input::placeholder, textarea::placeholder { color: var(--text-tertiary); opacity: 1; }
+select option { color: var(--text-primary); background: var(--bg-input); }
+:where(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--border-focus); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { body { transition: none; } }
+
+.header-container { flex-wrap: wrap; gap: 12px 24px; }
+.header-brand { flex-shrink: 0; }
+.header-actions { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.api-status-pill { white-space: nowrap; }
+@media (max-width: 768px) { .header-actions { justify-content: flex-start; width: 100%; } }

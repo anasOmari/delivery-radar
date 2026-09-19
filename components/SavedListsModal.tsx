@@ -111,7 +111,6 @@ export const SavedListsModal: React.FC<SavedListsModalProps> = ({
             </div>
             <div>
               <h3 className="modal-title">إدارة قوائم الحملات والعملاء المحفوظة</h3>
-              <p className="modal-subtitle">تنظيم وتصنيف جهات الاتصال في حملات مخصصة للرجوع إليها</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} title="إغلاق">

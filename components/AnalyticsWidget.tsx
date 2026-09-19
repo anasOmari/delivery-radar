@@ -43,7 +43,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({ leads }) => {
           </div>
           <div>
             <span className="analytics-label">{t('analytics.high_priority')}</span>
-            <h4 className="analytics-value">{goldenLeads.length} {t('analytics.high_priority.sub')}</h4>
+            <h4 className="analytics-value">{goldenLeads.length}</h4>
             <div className="progress-bar-bg">
               <div
                 className="progress-bar-fill fill-amber"
@@ -59,7 +59,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({ leads }) => {
           </div>
           <div>
             <span className="analytics-label">{t('analytics.no_website')}</span>
-            <h4 className="analytics-value">{noWebsiteLeads.length} {t('analytics.no_website.sub')}</h4>
+            <h4 className="analytics-value">{noWebsiteLeads.length}</h4>
             <div className="progress-bar-bg">
               <div
                 className="progress-bar-fill fill-purple"

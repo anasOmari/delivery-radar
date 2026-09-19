@@ -54,6 +54,18 @@ export default function Home() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
+  useEffect(() => {
+    setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+    const syncTheme = (event: StorageEvent) => {
+      if (event.key !== 'app_theme' && event.key !== null) return;
+      const nextTheme = event.newValue === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = nextTheme;
+      setTheme(nextTheme);
+    };
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
+
   // WhatsApp & Settings States
   const [whatsAppLead, setWhatsAppLead] = useState<Lead | null>(null);
   const [whatsAppCustomText, setWhatsAppCustomText] = useState<string | undefined>(undefined);
@@ -77,11 +89,8 @@ export default function Home() {
     try {
       const savedKey = localStorage.getItem('gmaps_api_key') || '';
       const savedLeads = localStorage.getItem('gmaps_leads');
-      const savedTheme = (localStorage.getItem('app_theme') as 'dark' | 'light') || 'dark';
 
       setApiKey(savedKey);
-      setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
 
       // Load WhatsApp Config
       const waCfg = getWhatsAppConfig();
@@ -251,8 +260,8 @@ export default function Home() {
             setApiNotification({
               type: 'success',
               message: locale === 'ar'
-                ? `⚡ نتائج هذا البحث مخزنة مسبقاً في قاعدة بياناتك المحلية وتم عرضها فوراً بدون استهلاك الـ API!`
-                : `⚡ Results for this query are already in your local vault and loaded with 0 API calls!`
+                ? `لا توجد نتائج جديدة. تم عرض السجلات المحفوظة.`
+                : `No new results. Showing saved leads.`
             });
           } else {
             setApiNotification({
@@ -275,9 +284,9 @@ export default function Home() {
         setHasMore(Boolean(data.hasMore && data.nextPageToken));
 
         if (data.mode === 'live_google_api') {
-          let msg = `${locale === 'ar' ? 'تم جلب' : 'Fetched'} ${data.count} ${locale === 'ar' ? 'محل حقيقي وحفظها تلقائياً بالأرشيف المحلي!' : 'live leads and auto-saved to local vault!'}`;
+          let msg = `${locale === 'ar' ? 'تم جلب' : 'Fetched'} ${data.count} ${locale === 'ar' ? 'نتيجة وحفظها محلياً.' : 'results and saved them locally.'}`;
           if (data.skippedCount > 0) {
-            msg += ` ${locale === 'ar' ? `(تم استبعاد ${data.skippedCount} مكرر لتوفير رصيدك 🛡️)` : `(Skipped ${data.skippedCount} seen leads 🛡️)`}`;
+            msg += ` ${locale === 'ar' ? `(تم استبعاد ${data.skippedCount} سجل مكرر)` : `(Skipped ${data.skippedCount} saved leads)`}`;
           }
           setApiNotification({
             type: 'success',
@@ -339,7 +348,7 @@ export default function Home() {
 
         setApiNotification({
           type: 'success',
-          message: `${locale === 'ar' ? 'تمت إضافة' : 'Added'} ${data.leads.length} ${locale === 'ar' ? 'سجل جديد وحفظها محلياً! الإجمالي الآن:' : 'new leads and auto-saved! Total now:'} ${merged.length} ${locale === 'ar' ? 'محل' : 'leads'}`
+          message: `${locale === 'ar' ? 'تمت إضافة' : 'Added'} ${data.leads.length} ${locale === 'ar' ? 'سجل. الإجمالي:' : 'leads. Total:'} ${merged.length} ${locale === 'ar' ? 'محل' : 'leads'}`
         });
       } else {
         setHasMore(false);
@@ -370,7 +379,7 @@ export default function Home() {
     setHasMore(false);
     setApiNotification({
       type: 'success',
-      message: `${locale === 'ar' ? 'تم استعراض كافة السجلات المحفوظة في قاعدة بياناتك المحلية' : 'Viewing all locally saved leads'} (${vault.length} ${locale === 'ar' ? 'جهة اتصال' : 'contacts'}) ${locale === 'ar' ? 'بدون أي استهلاك للـ API!' : 'with 0 API consumption!'}`
+      message: `${locale === 'ar' ? 'تم استعراض كافة السجلات المحفوظة في قاعدة بياناتك المحلية' : 'Viewing all locally saved leads'} (${vault.length} ${locale === 'ar' ? 'جهة اتصال' : 'contacts'}) `
     });
   };
 
@@ -482,8 +491,8 @@ export default function Home() {
           setApiNotification({
             type: 'success',
             message: locale === 'ar'
-              ? `✅ تم إرسال الرسالة إلى "${lead.name}" (${lead.phone}) بنجاح عبر Green-API!`
-              : `✅ Message successfully delivered to "${lead.name}" via Green-API!`
+              ? `✅ تم إرسال الرسالة إلى "${lead.name}" (${lead.phone}) بنجاح.`
+              : `✅ Message successfully delivered to "${lead.name}".`
           });
         } else {
           setApiNotification({
@@ -517,7 +526,7 @@ export default function Home() {
 
   if (proposalLead) {
     return (
-      <main className="app-container studio-fullscreen-container" data-theme={theme} style={{ padding: 0 }}>
+      <main className="app-container studio-fullscreen-container" style={{ padding: 0 }}>
         <ProposalStudio
           lead={proposalLead}
           onBack={() => setProposalLead(null)}
@@ -530,7 +539,7 @@ export default function Home() {
   const isWaActive = Boolean(whatsAppConfig.provider && whatsAppConfig.provider !== 'none');
 
   return (
-    <main className="app-container" data-theme={theme} dir={dir}>
+    <main className="app-container" dir={dir}>
       <Header
         apiKey={apiKey}
         onOpenApiKeyModal={() => setShowApiKeyModal(true)}
@@ -609,7 +618,7 @@ export default function Home() {
               ) : (
                 <>
                   <Layers size={16} />
-                  <span>{locale === 'ar' ? 'جلب 20 نتيجة إضافية (+20 المزيد من الخريطة ⏬)' : 'Load 20 More Leads (+20 ⏬)'}</span>
+                  <span>{locale === 'ar' ? 'عرض المزيد' : 'Load more'}</span>
                 </>
               )}
             </button>
@@ -656,8 +665,8 @@ export default function Home() {
             setApiNotification({
               type: 'success',
               message: locale === 'ar'
-                ? `✅ تم إرسال رسالة العرض إلى الرقم (${phone}) بنجاح عبر Green-API!`
-                : `✅ Offer message delivered to (${phone}) via Green-API!`
+                ? `تم إرسال الرسالة إلى (${phone}) بنجاح.`
+                : `Message sent to (${phone}).`
             });
           }}
         />
@@ -681,8 +690,8 @@ export default function Home() {
             setApiNotification({
               type: 'success',
               message: locale === 'ar'
-                ? '✅ تم حفظ إعدادات الرسائل و Green-API والشات بوت بنجاح!'
-                : '✅ Message settings, Green-API & Chatbot configuration saved!'
+                ? 'تم حفظ إعدادات الرسائل.'
+                : 'Message settings saved.'
             });
           }}
         />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, MapPin, Filter, RefreshCw, Layers, Globe2, Database, ShieldCheck, Zap } from 'lucide-react';
+import { Search, MapPin, Filter, RefreshCw, Layers, Globe2, Database, ShieldCheck } from 'lucide-react';
 import { SearchParams } from '@/lib/types';
 import { useLanguage } from '@/lib/LanguageContext';
 import { COUNTRIES, COUNTRY_CITIES, COUNTRY_CITIES_AR } from '@/lib/i18n';
@@ -89,12 +89,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
 
   const LIMIT_OPTIONS = [
     { value: 25, labelAr: '25 سجل', labelEn: '25 leads' },
-    { value: 50, labelAr: '50 سجل (مستحسن)', labelEn: '50 leads (Rec)' },
-    { value: 100, labelAr: '100 سجل (كافة المحافظات)', labelEn: '100 leads (All cities)' },
-    { value: 150, labelAr: '150+ سجل (مسح شامل 👑)', labelEn: '150+ leads (Nationwide 👑)' }
+    { value: 50, labelAr: '50 سجل', labelEn: '50 leads' },
+    { value: 100, labelAr: '100 سجل', labelEn: '100 leads' },
+    { value: 150, labelAr: '150 سجل', labelEn: '150 leads' }
   ];
-
-  const isNationwide = !city || city.trim() === (locale === 'ar' ? 'جميع المناطق' : 'All Regions');
 
   const handleCityChipClick = (cityName: string) => {
     const isAll = cityName === (locale === 'ar' ? 'جميع المناطق' : 'All Regions');
@@ -201,7 +199,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
           {/* Record Count / Limit Selector */}
           <div className="limit-selector-group">
             <Layers size={14} className="text-secondary" />
-            <span>{locale === 'ar' ? 'عدد النتائج المستهدفة:' : 'Target Results:'}</span>
+            <span>{locale === 'ar' ? 'عدد النتائج:' : 'Result limit:'}</span>
             <div className="limit-chips">
               {LIMIT_OPTIONS.map((opt) => (
                 <button
@@ -225,7 +223,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
               onChange={(e) => setSkipDuplicates(e.target.checked)}
             />
             <ShieldCheck size={14} color="#10b981" />
-            <span>{locale === 'ar' ? 'استبعاد السجلات المجلوبة مسبقاً (سجلات جديدة فقط ⚡)' : 'Skip previously fetched leads (New only ⚡)'}</span>
+            <span>{locale === 'ar' ? 'استبعاد السجلات المحفوظة' : 'Skip saved leads'}</span>
           </label>
         </div>
 
@@ -234,7 +232,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
           <div className="vault-status-card" title={locale === 'ar' ? 'يتم حفظ جميع النتائج محلياً تلقائياً لتقليل الاتصال مع Google API' : 'All leads are auto-saved locally to minimize API calls'}>
             <Database size={13} />
             <span>
-              {locale === 'ar' ? 'الأرشيف المحلي المحفوظ:' : 'Saved Vault:'} <strong>{vaultCount}</strong> {locale === 'ar' ? 'جهة اتصال' : 'leads'}
+              {locale === 'ar' ? 'المحفوظ:' : 'Saved:'} <strong>{vaultCount}</strong> {locale === 'ar' ? 'جهة اتصال' : 'leads'}
             </span>
             {onViewVault && vaultCount > 0 && (
               <button
@@ -243,28 +241,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
                 onClick={onViewVault}
                 title={locale === 'ar' ? 'عرض كل السجلات المحفوظة في قاعدة بياناتك دون استهلاك الـ API' : 'View all locally saved leads without calling API'}
               >
-                {locale === 'ar' ? 'استعراض الكل (0 API) ↗' : 'View All (0 API) ↗'}
+                {locale === 'ar' ? 'عرض الكل' : 'View all'}
               </button>
             )}
           </div>
         </div>
       </div>
-
-      {/* Nationwide Multi-City Parallel Scan Alert */}
-      {isNationwide && (
-        <div className="nationwide-notice-pill" style={{ marginTop: '10px' }}>
-          <Zap size={15} className="nationwide-notice-icon" />
-          <div className="nationwide-notice-text">
-            <strong>{locale === 'ar' ? '⚡ المسح الجغرافي الشامل لكافة المحافظات مُفعل:' : '⚡ Nationwide Multi-City Extraction Active:'}</strong>{' '}
-            {locale === 'ar'
-              ? `يتم استخراج الأنشطة بالتوازي عبر كافة محافظات الأردن (عمان، إربد، الزرقاء، العقبة، السلط، مأدبا، جرش، الكرك، المفرق) لاستخراج حتى ${limit} محل في كل بحث.`
-              : `Extracting in parallel across all governorates (Amman, Irbid, Zarqa, Aqaba, Salt, Madaba, Jerash, Karak, Mafraq) fetching up to ${limit} leads.`}
-          </div>
-          <span className="nationwide-limit-badge">
-            {limit} {locale === 'ar' ? 'محل مستهدف' : 'target'}
-          </span>
-        </div>
-      )}
 
       <div className="presets-container" style={{ marginTop: '12px' }}>
         <span className="presets-title">

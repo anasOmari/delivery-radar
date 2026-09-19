@@ -59,7 +59,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
             <div>
               <h3 className="modal-title">{t('export.title')}</h3>
-              <p className="modal-subtitle">تصدير بيانات المحلات والشركات بصيغ متعددة جاهزة للاستخدام</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} title={t('action.close')}>

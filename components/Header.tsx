@@ -52,23 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div>
           <h1 className="brand-title">{t('app.name')}</h1>
-          <p className="brand-subtitle">{t('app.tagline')}</p>
         </div>
-      </div>
-
-      <div className="header-nav">
-        <button className="nav-item active">
-          <span>{t('nav.dashboard')}</span>
-        </button>
-        <button className="nav-item">
-          <span>{t('nav.leads')}</span>
-        </button>
-        <button className="nav-item">
-          <span>{t('nav.campaigns')}</span>
-        </button>
-        <button className="nav-item">
-          <span>{t('nav.proposals')}</span>
-        </button>
       </div>
 
       <div className="header-actions">
@@ -86,12 +70,14 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-secondary btn-icon"
           onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? t('header.theme.toggle') : t('header.theme.dark')}
+          aria-pressed={theme === 'light'}
           title={theme === 'dark' ? t('header.theme.toggle') : t('header.theme.dark')}
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        {/* Smart AI Chatbot Live Simulator */}
+        {/* Smart Test auto-replies */}
         <button
           className="btn btn-secondary"
           onClick={onOpenChatbotModal}
@@ -103,10 +89,10 @@ export const Header: React.FC<HeaderProps> = ({
             gap: '6px',
             color: 'var(--text-primary)',
           }}
-          title={locale === 'ar' ? 'شات بوت قطرة الندى الذكي (محاكي الردود الحية)' : 'AI Chatbot Live Simulator'}
+          title={locale === 'ar' ? 'تجربة الردود التلقائية' : 'Test auto-replies'}
         >
-          <Bot size={16} style={{ color: '#25D366' }} />
-          <span>{locale === 'ar' ? 'الشات بوت الذكي 🤖' : 'AI Chatbot 🤖'}</span>
+          <Bot size={16} style={{ color: 'var(--whatsapp-color)' }} />
+          <span>{locale === 'ar' ? 'الردود التلقائية' : 'Auto-replies'}</span>
         </button>
 
         {/* Direct Send to Specific Contact / Phone Number */}
@@ -114,9 +100,9 @@ export const Header: React.FC<HeaderProps> = ({
           className="btn btn-whatsapp"
           onClick={onOpenDirectMessageModal}
           style={{
-            background: '#25D366',
+            background: 'var(--whatsapp-button)',
             color: '#fff',
-            borderColor: '#25D366',
+            borderColor: 'var(--whatsapp-button)',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -135,11 +121,11 @@ export const Header: React.FC<HeaderProps> = ({
           style={{
             borderColor: isWhatsAppConfigured ? 'rgba(37, 211, 102, 0.4)' : undefined,
             background: isWhatsAppConfigured ? 'rgba(37, 211, 102, 0.08)' : undefined,
-            color: isWhatsAppConfigured ? '#25D366' : undefined,
+            color: isWhatsAppConfigured ? 'var(--whatsapp-color)' : undefined,
           }}
           title={t('whatsapp.api.settings')}
         >
-          <MessageCircle size={16} style={{ color: isWhatsAppConfigured ? '#25D366' : undefined }} />
+          <MessageCircle size={16} style={{ color: isWhatsAppConfigured ? 'var(--whatsapp-color)' : undefined }} />
           <span>{t('header.messages.settings')}</span>
           {isWhatsAppConfigured && (
             <span
@@ -147,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                 width: '7px',
                 height: '7px',
                 borderRadius: '50%',
-                background: '#25D366',
+                background: 'var(--whatsapp-button)',
                 display: 'inline-block',
                 boxShadow: '0 0 6px #25D366',
               }}

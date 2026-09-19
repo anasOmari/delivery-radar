@@ -32,7 +32,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'bot',
-      text: `أهلاً بك في محاكي الشات بوت الذكي لـ *خدمات قطرة الندى للتوصيل* 🤖✨\n\nأنا جاهز للرد الفوري على عملائك تلقائياً 24/7.\nجرب أن تسألني أي سؤال مثل:\n• "كم سعر التوصيل لعمان ومحافظات؟"\n• "بدي كابتن ضروري لتوصيل أوردر"\n• "عندكم اشتراكات شهرية للمطاعم؟"\n• "كيف نظام الدفع عندكم؟"`,
+      text: locale === 'ar' ? 'أرسل رسالة لتجربة الردود التلقائية.' : 'Send a message to test auto-replies.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -146,7 +146,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
             <div>
               <div className="flex-align gap-2">
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {locale === 'ar' ? 'شات بوت قطرة الندى الذكي (Live Simulator)' : 'AI Chatbot Live Simulator'}
+                  {locale === 'ar' ? 'تجربة الردود التلقائية' : 'Test auto-replies'}
                 </h3>
                 <span
                   style={{
@@ -154,11 +154,11 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
                     padding: '2px 6px',
                     borderRadius: '10px',
                     background: 'rgba(37, 211, 102, 0.2)',
-                    color: '#25D366',
+                    color: 'var(--whatsapp-color)',
                     fontWeight: 700,
                   }}
                 >
-                  ● Active AI
+                  {locale === 'ar' ? 'محاكاة' : 'Simulation'}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
@@ -208,7 +208,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
                     padding: '10px 14px',
                     borderRadius: isBot ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
                     background: isBot ? 'var(--bg-surface-elevated, #1c1c28)' : '#075E54',
-                    color: '#fff',
+                    color: isBot ? 'var(--text-primary)' : '#fff',
                     border: isBot ? '1px solid var(--border-default)' : 'none',
                     fontSize: '0.86rem',
                     lineHeight: 1.55,
@@ -218,7 +218,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
                   }}
                 >
                   {isBot && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', fontSize: '0.72rem', color: '#25D366', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', fontSize: '0.72rem', color: 'var(--whatsapp-color)', fontWeight: 700 }}>
                       <Sparkles size={11} />
                       <span>قطرة الندى AI Bot</span>
                     </div>
@@ -227,7 +227,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
                   <div
                     style={{
                       fontSize: '0.65rem',
-                      color: 'rgba(255,255,255,0.5)',
+                      color: isBot ? 'var(--text-secondary)' : 'rgba(255,255,255,0.8)',
                       textAlign: isBot ? 'left' : 'right',
                       marginTop: '4px',
                     }}
@@ -283,7 +283,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
               style={{
                 padding: '4px 10px',
                 borderRadius: '14px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-input)',
                 border: '1px solid var(--border-default)',
                 color: 'var(--text-secondary)',
                 fontSize: '0.75rem',
@@ -337,7 +337,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: '#25D366',
+              background: 'var(--whatsapp-button)',
               color: '#fff',
               border: 'none',
               cursor: 'pointer',

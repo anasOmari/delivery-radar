@@ -125,7 +125,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             </div>
             <div>
               <h3 className="modal-title">استيراد جهات اتصال خارجية</h3>
-              <p className="modal-subtitle">دمج أرقام العملاء من ملفات CSV مع كاشف التكرار التلقائي</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} title="إغلاق">

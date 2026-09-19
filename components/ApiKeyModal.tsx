@@ -72,7 +72,6 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             </div>
             <div>
               <h3 className="modal-title">{t('apikey.title')}</h3>
-              <p className="modal-subtitle">ربط مفتاح خرائط جوجل المباشر لجلب النتائج الحية الرسمية</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} title={t('action.close')}>
