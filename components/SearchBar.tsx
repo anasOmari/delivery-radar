@@ -111,14 +111,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
   };
 
   return (
-    <div className="search-card">
+    <section className="search-card" aria-labelledby="search-title">
+      <h2 id="search-title" className="section-title">{locale === 'ar' ? 'البحث عن عملاء' : 'Find leads'}</h2>
       <form onSubmit={handleSubmit} className="search-form">
         <div className="input-group flex-2">
-          <label className="input-label">
+          <label className="input-label" htmlFor="search-category">
             <Search size={15} />
             <span>{t('search.category.label')}</span>
           </label>
-          <input
+          <input id="search-category"
             type="text"
             className="input-field"
             placeholder={t('search.category.placeholder')}
@@ -128,11 +129,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
         </div>
 
         <div className="input-group flex-1">
-          <label className="input-label">
+          <label className="input-label" htmlFor="search-country">
             <Globe2 size={15} />
             <span>{t('search.country.label')}</span>
           </label>
-          <select
+          <select id="search-country"
             className="input-field select-field"
             value={country}
             onChange={(e) => handleCountryChange(e.target.value)}
@@ -144,11 +145,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
         </div>
 
         <div className="input-group flex-1">
-          <label className="input-label">
+          <label className="input-label" htmlFor="search-city">
             <MapPin size={15} />
             <span>{t('search.city.label')}</span>
           </label>
-          <input
+          <input id="search-city"
             type="text"
             className="input-field"
             list="cities-suggestions"
@@ -193,6 +194,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
         </button>
       </form>
 
+      <details className="search-options disclosure">
+        <summary>{locale === 'ar' ? 'خيارات البحث' : 'Search options'}</summary>
       {/* Advanced Extraction Controls: Limit, Deduplication & Local Lead Vault Status */}
       <div className="search-controls-row">
         <div className="search-controls-left">
@@ -248,6 +251,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
         </div>
       </div>
 
+      </details>
+      <details className="search-presets disclosure">
+        <summary>{locale === 'ar' ? 'المناطق والأنشطة المقترحة' : 'Suggested regions and categories'}</summary>
       <div className="presets-container" style={{ marginTop: '12px' }}>
         <span className="presets-title">
           <MapPin size={13} />
@@ -288,6 +294,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
           ))}
         </div>
       </div>
-    </div>
+      </details>
+    </section>
   );
 };

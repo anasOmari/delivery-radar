@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot } from 'lucide-react';
+import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { Locale } from '@/lib/i18n';
 
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      <div className="header-actions">
+      <div className="header-utilities">
         {/* Language Toggle */}
         <button
           className="lang-toggle"
@@ -77,7 +77,21 @@ export const Header: React.FC<HeaderProps> = ({
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        {/* Smart Test auto-replies */}
+      </div>
+      <details className="header-menu" onKeyDown={event => {
+        if (event.key === 'Escape') {
+          event.currentTarget.open = false;
+          event.currentTarget.querySelector('summary')?.focus();
+        }
+      }}>
+        <summary className="btn btn-secondary" aria-label={locale === 'ar' ? 'الأدوات' : 'Tools'}><Menu size={18} /><span>{locale === 'ar' ? 'الأدوات' : 'Tools'}</span></summary>
+        <div className="header-menu-panel" onClick={event => {
+          if ((event.target as HTMLElement).closest('button')) {
+            const menu = event.currentTarget.closest('details');
+            if (menu) menu.open = false;
+          }
+        }}>
+        {/* Actions */}
         <button
           className="btn btn-secondary"
           onClick={onOpenChatbotModal}
@@ -154,14 +168,14 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* API Status */}
-        <div
+        <button
           className={`api-status-pill ${apiKey ? 'status-active' : 'status-demo'}`}
           onClick={onOpenApiKeyModal}
           title={t('header.api.settings')}
         >
           <span className="dot"></span>
           <span>{apiKey ? t('header.api.connected') : t('header.api.demo')}</span>
-        </div>
+        </button>
 
         {/* Export */}
         <button className="btn btn-secondary" onClick={onOpenExportModal}>
@@ -175,7 +189,8 @@ export const Header: React.FC<HeaderProps> = ({
           <Key size={16} />
           <span>{t('header.api.settings')}</span>
         </button>
-      </div>
+        </div>
+      </details>
     </header>
   );
 };

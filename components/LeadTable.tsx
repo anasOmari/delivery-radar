@@ -91,7 +91,16 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 }) => {
   const { t, locale } = useLanguage();
 
-  const [viewMode, setViewMode] = useState<'table' | 'cards' | 'kanban' | 'map'>('table');
+  const [preferredView, setViewMode] = useState<'table' | 'cards' | 'kanban' | 'map' | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const viewMode = preferredView ?? (isMobile ? 'cards' : 'table');
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: '',
     status: 'all',
@@ -225,7 +234,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   };
 
   return (
-    <div className="lead-table-wrapper">
+    <section className="lead-table-wrapper" aria-labelledby="leads-title">
+      <div className="section-heading"><h2 id="leads-title" className="section-title">{locale === 'ar' ? 'العملاء' : 'Leads'}</h2><span className="count-label">{filteredLeads.length}</span></div>
       {/* Controls Bar */}
       <div className="table-controls-bar">
         <div className="search-filter-box" style={{ flexWrap: 'wrap', gap: '8px' }}>
@@ -233,15 +243,20 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             <Search size={15} />
             <input
               type="text"
+              aria-label={t('table.search_placeholder')}
               placeholder={t('table.search_placeholder')}
               value={filters.searchTerm}
               onChange={e => setFilters({ ...filters, searchTerm: e.target.value })}
             />
           </div>
 
+          <details className="lead-filters disclosure">
+            <summary>{locale === 'ar' ? 'تصفية وترتيب' : 'Filter and sort'}</summary>
+            <div className="lead-filter-fields">
           {/* Status Filter */}
           <select
             className="filter-select"
+            aria-label={t('table.filter.status')}
             value={filters.status}
             onChange={e => setFilters({ ...filters, status: e.target.value as any })}
           >
@@ -256,6 +271,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           {/* Website Filter */}
           <select
             className="filter-select"
+            aria-label={t('table.filter.website')}
             value={filters.websiteFilter}
             onChange={e => setFilters({ ...filters, websiteFilter: e.target.value as any })}
           >
@@ -267,6 +283,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           {/* Social Filter */}
           <select
             className="filter-select"
+            aria-label={t('table.filter.social')}
             value={filters.socialFilter}
             onChange={e => setFilters({ ...filters, socialFilter: e.target.value as any })}
           >
@@ -278,6 +295,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           {/* Follow-up Filter */}
           <select
             className="filter-select"
+            aria-label={t('action.followup')}
             value={filters.followUpFilter}
             onChange={e => setFilters({ ...filters, followUpFilter: e.target.value as any })}
           >
@@ -289,6 +307,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           {/* Priority Filter */}
           <select
             className="filter-select"
+            aria-label={t('table.filter.priority')}
             value={filters.priorityFilter}
             onChange={e => setFilters({ ...filters, priorityFilter: e.target.value as any })}
           >
@@ -303,7 +322,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             <ArrowUpDown size={14} />
             <select
               className="filter-select"
-              value={filters.sortBy}
+              aria-label={locale === 'ar' ? 'ترتيب حسب' : 'Sort by'}
+            value={filters.sortBy}
               onChange={e => setFilters({ ...filters, sortBy: e.target.value as any })}
             >
               <option value="opportunityScore">{t('table.col.opportunity')}</option>
@@ -312,6 +332,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               <option value="name">{t('common.name')}</option>
             </select>
           </div>
+            </div>
+          </details>
         </div>
 
         {/* View Switcher */}
@@ -319,6 +341,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           <div className="toggle-group">
             <button
               className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              aria-pressed={viewMode === 'table'}
               onClick={() => setViewMode('table')}
               title={t('table.view.table')}
             >
@@ -327,6 +350,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             </button>
             <button
               className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              aria-pressed={viewMode === 'cards'}
               onClick={() => setViewMode('cards')}
               title={t('table.view.cards')}
             >
@@ -335,6 +359,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             </button>
             <button
               className={`toggle-btn ${viewMode === 'kanban' ? 'active' : ''}`}
+              aria-pressed={viewMode === 'kanban'}
               onClick={() => setViewMode('kanban')}
               title={t('table.view.kanban')}
             >
@@ -343,6 +368,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             </button>
             <button
               className={`toggle-btn ${viewMode === 'map' ? 'active' : ''}`}
+              aria-pressed={viewMode === 'map'}
               onClick={() => setViewMode('map')}
               title={t('table.view.map')}
             >
@@ -396,7 +422,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               </span>
             </button>
           )}
-          <span>{t('table.no_results')}: {filteredLeads.length}</span>
+          <span>{locale === 'ar' ? 'النتائج' : 'Results'}: {filteredLeads.length}</span>
         </div>
       </div>
 
@@ -432,7 +458,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                       return (
                         <div key={lead.id} className={`kanban-lead-card ${isSelected ? 'selected' : ''}`}>
                           <div className="flex-between">
-                            <button className="check-btn" onClick={() => onToggleSelect(lead.id)}>
+                            <button className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)}>
                               {isSelected ? <CheckSquare size={14} className="text-purple" /> : <Square size={14} />}
                             </button>
                             <span className="kanban-score-tag">{lead.opportunityScore || 90}% {t('table.col.opportunity')}</span>
@@ -528,6 +554,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         </div>
       ) : viewMode === 'cards' ? (
         <div className="cards-grid">
+          {paginatedLeads.length === 0 && <p className="empty-state">{t('table.no_results')}</p>}
           {paginatedLeads.map(lead => {
             const isSelected = selectedIds.includes(lead.id);
             const cleanNum = formatPhoneForWhatsApp(lead.phone);
@@ -535,7 +562,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             return (
               <div key={lead.id} className={`lead-card ${isSelected ? 'selected' : ''}`}>
                 <div className="card-top">
-                  <button className="check-btn" onClick={() => onToggleSelect(lead.id)}>
+                  <button className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)}>
                     {isSelected ? <CheckSquare size={16} className="text-purple" /> : <Square size={16} />}
                   </button>
                   <div className="opp-score-badge" title={lead.opportunityReason}>
@@ -1143,6 +1170,6 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };

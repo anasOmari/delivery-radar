@@ -80,6 +80,12 @@ export default function Home() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSavedListsModal, setShowSavedListsModal] = useState(false);
   const [proposalLead, setProposalLead] = useState<Lead | null>(null);
+  useEffect(() => {
+    if (!proposalLead) return;
+    const previousScroll = window.scrollY;
+    window.scrollTo(0, 0);
+    return () => window.scrollTo(0, previousScroll);
+  }, [proposalLead]);
   const [followUpLead, setFollowUpLead] = useState<Lead | null>(null);
   const [auditLead, setAuditLead] = useState<Lead | null>(null);
 

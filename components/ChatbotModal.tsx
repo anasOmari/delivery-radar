@@ -104,11 +104,11 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-box modal-lg"
+        className="modal-box modal-lg chatbot-dialog"
         onClick={e => e.stopPropagation()}
         style={{
           maxWidth: '680px',
-          height: '85vh',
+          height: '85dvh',
           maxHeight: '750px',
           display: 'flex',
           flexDirection: 'column',
@@ -117,7 +117,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
         }}
       >
         {/* Header */}
-        <div
+        <div className="chatbot-header"
           style={{
             display: 'flex',
             alignItems: 'center',
