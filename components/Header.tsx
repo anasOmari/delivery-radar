@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu } from 'lucide-react';
+import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu, LogOut, Smartphone } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
 import { Locale } from '@/lib/i18n';
 
 interface HeaderProps {
@@ -38,10 +40,17 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme
 }) => {
   const { locale, setLocale, t } = useLanguage();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
   const toggleLanguage = () => {
     const next: Locale = locale === 'ar' ? 'en' : 'ar';
     setLocale(next);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace('/login');
   };
 
   return (
@@ -56,6 +65,22 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="header-utilities">
+        {user && (
+          <span className="auth-user-pill" title={user.phone}>
+            <Smartphone size={14} />
+            <span dir="ltr">{user.phone}</span>
+          </span>
+        )}
+        {user && (
+          <button
+            className="btn btn-secondary btn-icon"
+            onClick={handleLogout}
+            title={locale === 'ar' ? 'تسجيل الخروج' : 'Log out'}
+            aria-label={locale === 'ar' ? 'تسجيل الخروج' : 'Log out'}
+          >
+            <LogOut size={17} />
+          </button>
+        )}
         {/* Language Toggle */}
         <button
           className="lang-toggle"

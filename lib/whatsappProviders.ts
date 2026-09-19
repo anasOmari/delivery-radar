@@ -1,3 +1,4 @@
+import type { BotSettings } from './chatbotConfig';
 export type WhatsAppProvider = 'greenapi' | 'whapi' | 'wati' | 'twilio' | 'meta' | 'none';
 
 export interface CustomMessageTemplate {
@@ -6,7 +7,7 @@ export interface CustomMessageTemplate {
   template: string;
 }
 
-export interface WhatsAppConfig {
+export interface WhatsAppConfig extends BotSettings {
   provider: WhatsAppProvider;
   greenapi?: {
     idInstance: string;
@@ -35,16 +36,6 @@ export interface WhatsAppConfig {
   autoSendDirectly?: boolean;
   sendDelaySeconds?: number;
   customTemplates?: CustomMessageTemplate[];
-  chatbotEnabled?: boolean;
-  managerPhone?: string;
-  chatbotGreeting?: string;
-  aiApiKey?: string;
-  aiProvider?: 'gemini' | 'openai' | 'groq' | 'builtin';
-  customSystemPrompt?: string;
-  businessName?: string;
-  servicesText?: string;
-  pricingText?: string;
-  customRules?: string;
 }
 
 export interface WhatsAppMessage {

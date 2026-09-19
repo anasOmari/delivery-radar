@@ -28,6 +28,8 @@ import {
   DEFAULT_AUTO_MESSAGE_TEMPLATE
 } from '@/lib/whatsappProviders';
 import { AlertTriangle, CheckCircle, Info, RefreshCw, Layers } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
 import { 
   getLeadVault, 
   autoSaveLeadsToVault, 
@@ -37,6 +39,8 @@ import { syncLeadsToSupabase } from '@/lib/supabase';
 
 export default function Home() {
   const { t, locale, dir } = useLanguage();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeCity, setActiveCity] = useState('عمان');
@@ -90,6 +94,11 @@ export default function Home() {
   const [auditLead, setAuditLead] = useState<Lead | null>(null);
 
   const { validateLeads, validating, progress } = useValidation();
+
+  // Require auth: mobile-number login. Redirect guests to /login.
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/login');
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     try {
@@ -529,6 +538,14 @@ export default function Home() {
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, validation } : l));
     });
   };
+
+  if (authLoading || !user) {
+    return (
+      <main className="app-container flex-center" style={{ minHeight: '60vh' }} dir={dir}>
+        <span className="subtext">{locale === 'ar' ? 'جاري التحقق من الجلسة...' : 'Checking session...'}</span>
+      </main>
+    );
+  }
 
   if (proposalLead) {
     return (

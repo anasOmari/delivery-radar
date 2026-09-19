@@ -42,7 +42,7 @@ interface WhatsAppSettingsModalProps {
 export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ onClose, onSaved }) => {
   const { t, locale } = useLanguage();
   const [config, setConfig] = useState<WhatsAppConfig>(getWhatsAppConfig());
-  const [activeTab, setActiveTab] = useState<'provider' | 'message' | 'automation' | 'chatbot'>('provider');
+  const [activeTab, setActiveTab] = useState<'provider' | 'message' | 'automation' | 'chatbot' | 'ai_knowledge'>('provider');
   const [isTesting, setIsTesting] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -319,6 +319,41 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
 
           <button
             type="button"
+            onClick={() => setActiveTab('ai_knowledge')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '12px 14px',
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'ai_knowledge' ? '3px solid #F59E0B' : '3px solid transparent',
+              color: activeTab === 'ai_knowledge' ? '#F59E0B' : 'var(--text-tertiary)',
+              fontWeight: activeTab === 'ai_knowledge' ? 700 : 500,
+              fontSize: '0.86rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Sparkles size={15} style={{ color: activeTab === 'ai_knowledge' ? '#F59E0B' : 'inherit' }} />
+            <span>{locale === 'ar' ? '🧠 تدريب الذكاء الاصطناعي (AI Training)' : '🧠 AI Knowledge & Training'}</span>
+            <span
+              style={{
+                fontSize: '0.66rem',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                background: 'rgba(245, 158, 11, 0.2)',
+                color: '#F59E0B',
+                fontWeight: 700,
+              }}
+            >
+              AI
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('chatbot')}
             style={{
               display: 'flex',
@@ -337,7 +372,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
             }}
           >
             <Bot size={15} style={{ color: activeTab === 'chatbot' ? 'var(--whatsapp-color)' : 'inherit' }} />
-            <span>{locale === 'ar' ? 'الشات بوت الذكي (AI Chatbot) 🤖' : 'Smart AI Chatbot 🤖'}</span>
+            <span>{locale === 'ar' ? 'الشات بوت الذكي 🤖' : 'Smart AI Chatbot 🤖'}</span>
           </button>
 
           <button
