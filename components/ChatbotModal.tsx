@@ -16,7 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
-import { processChatbotMessage, ChatMessage } from '@/lib/chatbotEngine';
+import { processChatbotMessageAI, ChatMessage } from '@/lib/chatbotEngine';
 import { getWhatsAppConfig } from '@/lib/whatsappProviders';
 
 interface ChatbotModalProps {
@@ -47,7 +47,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
     if (!text) return;
 
@@ -61,11 +61,11 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
     setInput('');
     setIsTyping(true);
 
-    // Simulate natural AI thinking delay (400ms - 800ms)
-    setTimeout(() => {
-      const replyText = processChatbotMessage(text, 'simulator_user', {
+    try {
+      const replyText = await processChatbotMessageAI(text, 'simulator_user', {
         enabled: true,
         managerPhone: config.managerPhone || '0788779463',
+        aiApiKey: config.aiApiKey,
       });
 
       const botMsg: ChatMessage = {
@@ -75,8 +75,11 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
       };
 
       setMessages(prev => [...prev, botMsg]);
+    } catch (e) {
+      console.warn('Chatbot AI error:', e);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
   const handleReset = () => {

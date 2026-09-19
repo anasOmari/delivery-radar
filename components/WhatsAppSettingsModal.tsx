@@ -796,6 +796,36 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                       : 'Phone number provided when customer asks to speak with human manager'}
                   </span>
                 </div>
+
+                <div className="studio-field" style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border-default)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', color: '#10B981' }}>
+                      <Sparkles size={15} />
+                      <span>{locale === 'ar' ? 'مفتاح الذكاء الاصطناعي (Google Gemini AI Key)' : 'Google Gemini AI Key (Optional)'}</span>
+                    </label>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.72rem', color: '#3B82F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <span>{locale === 'ar' ? 'احصل على مفتاح مجاني' : 'Get Free Key'}</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="AIzaSy..."
+                    value={config.aiApiKey || ''}
+                    onChange={e => setConfig(prev => ({ ...prev, aiApiKey: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', fontFamily: 'monospace', borderRadius: 'var(--radius-sm)' }}
+                  />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px', display: 'block' }}>
+                    {locale === 'ar'
+                      ? '💡 عند إدخال المفتاح، يتحول الشات بوت تلقائياً إلى ذكاء اصطناعي تفاعلي كامل يفهم أي سؤال بلهجة أردنية طبيعية وسياق دقيق!'
+                      : 'When provided, powers the chatbot with Google Gemini for full conversational intelligence in natural Arabic.'}
+                  </span>
+                </div>
               </div>
 
               {/* Green-API Webhook Instructions Box */}

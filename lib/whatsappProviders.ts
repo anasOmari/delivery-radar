@@ -38,6 +38,8 @@ export interface WhatsAppConfig {
   chatbotEnabled?: boolean;
   managerPhone?: string;
   chatbotGreeting?: string;
+  aiApiKey?: string;
+  aiProvider?: 'gemini' | 'openai' | 'groq' | 'builtin';
 }
 
 export interface WhatsAppMessage {

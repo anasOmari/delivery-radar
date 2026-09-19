@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processChatbotMessage } from '@/lib/chatbotEngine';
+import { processChatbotMessageAI } from '@/lib/chatbotEngine';
 import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
 import { getServerWhatsAppConfigAsync } from '../config/route';
 
@@ -47,10 +47,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Green-API credentials (apiTokenInstance) missing on server' });
     }
 
-    // Process with Smart AI Chatbot Engine
-    const botReply = processChatbotMessage(incomingText, chatId, {
+    // Process with Smart AI Chatbot Engine (LLM + NLP)
+    const botReply = await processChatbotMessageAI(incomingText, chatId, {
       enabled: config.chatbotEnabled !== false,
       managerPhone: config.managerPhone || '0788779463',
+      aiApiKey: config.aiApiKey || process.env.GEMINI_API_KEY,
     });
 
     if (!botReply) {
