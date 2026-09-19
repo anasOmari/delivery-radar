@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
 import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -39,8 +39,8 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title={ar ? 'تسجيل الدخول' : 'Log in'}
-      subtitle={ar ? 'ادخل ببريدك الإلكتروني وكلمة المرور' : 'Sign in with your email and password'}
+      title={ar ? 'مرحباً بعودتك' : 'Welcome back'}
+      subtitle={ar ? 'ادخل ببريدك الإلكتروني للوصول إلى لوحتك' : 'Sign in with your email to reach your dashboard'}
       footer={
         <span>
           {ar ? 'ليس لديك حساب؟ ' : "Don't have an account? "}
@@ -97,8 +97,17 @@ export default function LoginPage() {
         </div>
 
         <button className="btn btn-search auth-submit" type="submit" disabled={submitting || loading}>
-          <LogIn size={16} />
-          {submitting ? (ar ? 'جاري الدخول...' : 'Signing in...') : ar ? 'دخول' : 'Log in'}
+          {submitting ? (
+            <>
+              <Loader2 size={17} className="spin" />
+              {ar ? 'جاري الدخول...' : 'Signing in...'}
+            </>
+          ) : (
+            <>
+              {ar ? 'دخول' : 'Log in'}
+              {ar ? <ArrowLeft size={17} /> : <ArrowRight size={17} />}
+            </>
+          )}
         </button>
       </form>
     </AuthShell>
