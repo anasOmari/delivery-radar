@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processChatbotMessage } from '@/lib/chatbotEngine';
-import { getWhatsAppConfig } from '@/lib/whatsappProviders';
 import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
+import { getServerWhatsAppConfig } from '../config/route';
 
 export async function GET(req: NextRequest) {
   return NextResponse.json({
@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No readable text in message' });
     }
 
-    // Load server/local config
-    const config = getWhatsAppConfig();
+    // Load server config
+    const config = getServerWhatsAppConfig();
     const green = config.greenapi;
 
     if (!green?.idInstance || !green?.apiTokenInstance) {
-      console.warn('Green-API credentials not found on server for webhook auto-reply.');
-      return NextResponse.json({ success: false, error: 'Green-API not configured' });
+      console.warn('Green-API credentials not found on server for webhook auto-reply. Received:', { id: green?.idInstance });
+      return NextResponse.json({ success: false, error: 'Green-API credentials (apiTokenInstance) missing on server' });
     }
 
     // Process with Smart AI Chatbot Engine

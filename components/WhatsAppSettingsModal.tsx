@@ -49,6 +49,31 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
 
+  // Sync server config on mount
+  React.useEffect(() => {
+    fetch('/api/whatsapp/config')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.config?.greenapi?.idInstance) {
+          setConfig((prev) => {
+            const merged: WhatsAppConfig = {
+              ...prev,
+              provider: prev.provider === 'none' ? 'greenapi' : prev.provider,
+              greenapi: {
+                ...prev.greenapi,
+                idInstance: prev.greenapi?.idInstance || data.config.greenapi.idInstance,
+                apiTokenInstance: prev.greenapi?.apiTokenInstance || data.config.greenapi.apiTokenInstance,
+                apiUrl: prev.greenapi?.apiUrl || data.config.greenapi.apiUrl,
+              },
+            };
+            saveWhatsAppConfig(merged);
+            return merged;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Dynamic sample preview lead
   const sampleLead = {
     name: locale === 'ar' ? 'مطعم ورد الشام' : 'Rose of Damascus Bistro',
