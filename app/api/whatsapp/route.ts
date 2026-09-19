@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProvider } from '@/lib/providerRegistry';
 import { WhatsAppConfig, WhatsAppMessage } from '@/lib/whatsappProviders';
+import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
 
 async function handler(req: NextRequest) {
   if (req.method !== 'POST') {
@@ -50,6 +51,15 @@ async function handler(req: NextRequest) {
       }
 
       const result = await provider.sendMessage(config, message);
+      if (result.success) {
+        // Log outbound message asynchronously in Supabase
+        logWhatsAppMessageToSupabase({
+          phone: message.to,
+          messageText: message.text,
+          direction: 'outbound',
+          status: 'sent',
+        }).catch(() => {});
+      }
       return NextResponse.json(result);
     }
 

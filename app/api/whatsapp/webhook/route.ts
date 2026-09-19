@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processChatbotMessage } from '@/lib/chatbotEngine';
 import { getWhatsAppConfig } from '@/lib/whatsappProviders';
+import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   return NextResponse.json({
@@ -66,6 +67,15 @@ export async function POST(req: NextRequest) {
 
     const sendUrl = `${baseUrl}/waInstance${green.idInstance.trim()}/sendMessage/${green.apiTokenInstance.trim()}`;
 
+    // Log inbound customer message to Supabase
+    logWhatsAppMessageToSupabase({
+      phone: chatId.replace('@c.us', ''),
+      messageText: incomingText,
+      direction: 'inbound',
+      status: 'delivered',
+      leadName: body.senderData?.senderName || null,
+    }).catch(() => {});
+
     // Send the reply back to the customer
     const res = await fetch(sendUrl, {
       method: 'POST',
@@ -77,6 +87,17 @@ export async function POST(req: NextRequest) {
     });
 
     const sendData = await res.json();
+
+    // Log outbound bot reply to Supabase
+    if (sendData.idMessage) {
+      logWhatsAppMessageToSupabase({
+        phone: chatId.replace('@c.us', ''),
+        messageText: botReply,
+        direction: 'outbound',
+        status: 'sent',
+        leadName: 'قطرة الندى AI Bot',
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,
