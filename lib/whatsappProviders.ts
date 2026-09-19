@@ -72,6 +72,20 @@ export interface WhatsAppProviderInterface {
   sendMessage(config: WhatsAppConfig, message: WhatsAppMessage): Promise<WhatsAppResponse>;
   validateConfig(config: WhatsAppConfig): Promise<boolean>;
   checkNumber(config: WhatsAppConfig, phone: string): Promise<boolean>;
+  sendLocation?(
+    config: WhatsAppConfig,
+    to: string,
+    latitude: number,
+    longitude: number,
+    nameLocation?: string,
+    address?: string
+  ): Promise<boolean>;
+  sendButtons?(
+    config: WhatsAppConfig,
+    to: string,
+    message: string,
+    buttons: Array<{ buttonId: string; buttonText: string }>
+  ): Promise<boolean>;
 }
 
 export const DEFAULT_AUTO_MESSAGE_TEMPLATE = `السلام عليكم ورحمة الله، تحياتنا لإدارة {name} المحترمين 👋✨

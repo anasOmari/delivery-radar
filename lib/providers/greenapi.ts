@@ -183,4 +183,70 @@ export const GreenApiProvider: WhatsAppProviderInterface = {
       return false;
     }
   },
+
+  async sendLocation(
+    config: WhatsAppConfig,
+    to: string,
+    latitude: number,
+    longitude: number,
+    nameLocation: string = 'خدمات قطرة الندى للتوصيل',
+    address: string = 'عمّان - الأردن'
+  ): Promise<boolean> {
+    const green = config.greenapi;
+    if (!green?.idInstance || !green?.apiTokenInstance) return false;
+
+    const idInstance = green.idInstance.trim();
+    const token = green.apiTokenInstance.trim();
+    const baseUrl = getGreenApiBaseUrl(green.apiUrl, idInstance);
+    const cleanPhone = cleanPhoneForGreenApi(to);
+    const chatId = `${cleanPhone}@c.us`;
+
+    try {
+      const response = await fetch(`${baseUrl}/waInstance${idInstance}/sendLocation/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId,
+          latitude,
+          longitude,
+          nameLocation,
+          address,
+        }),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  async sendButtons(
+    config: WhatsAppConfig,
+    to: string,
+    message: string,
+    buttons: Array<{ buttonId: string; buttonText: string }>
+  ): Promise<boolean> {
+    const green = config.greenapi;
+    if (!green?.idInstance || !green?.apiTokenInstance) return false;
+
+    const idInstance = green.idInstance.trim();
+    const token = green.apiTokenInstance.trim();
+    const baseUrl = getGreenApiBaseUrl(green.apiUrl, idInstance);
+    const cleanPhone = cleanPhoneForGreenApi(to);
+    const chatId = `${cleanPhone}@c.us`;
+
+    try {
+      const response = await fetch(`${baseUrl}/waInstance${idInstance}/sendButtons/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId,
+          message,
+          buttons,
+        }),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  },
 };
