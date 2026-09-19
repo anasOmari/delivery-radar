@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getProvider } from '@/lib/providerRegistry';
 import { WhatsAppConfig, WhatsAppMessage } from '@/lib/whatsappProviders';
 import { logWhatsAppMessageToSupabase } from '@/lib/supabase';
+import { POST as handleWebhookPost } from './webhook/route';
 
 async function handler(req: NextRequest) {
   if (req.method !== 'POST') {
@@ -10,6 +11,17 @@ async function handler(req: NextRequest) {
 
   try {
     const body = await req.json();
+
+    // If incoming request is a Green-API Webhook event
+    if (body.typeWebhook) {
+      const clonedReq = new NextRequest(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(body),
+      });
+      return handleWebhookPost(clonedReq);
+    }
+
     const { config, message, action } = body as {
       config: WhatsAppConfig;
       message: WhatsAppMessage;
