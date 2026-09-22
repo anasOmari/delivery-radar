@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Locale } from '@/lib/i18n';
 import { useBranding } from '@/lib/BrandingContext';
 import { BrandSettingsModal } from '@/components/BrandSettingsModal';
+import { BotToggle } from '@/components/BotToggle';
 
 interface HeaderProps {
   apiKey: string;
@@ -70,6 +71,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="header-utilities">
+        {/* Instant bot ON/OFF kill-switch */}
+        <BotToggle />
         {user && (
           <span className="auth-user-pill" title={user.email}>
             <Mail size={14} />

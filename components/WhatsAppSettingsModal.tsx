@@ -39,6 +39,7 @@ import {
   applyBrainDefaults,
 } from '@/lib/chatbotConfig';
 import { saveWhatsAppConfigToSupabase, getWhatsAppConfigFromSupabase } from '@/lib/supabase';
+import { BOT_CONFIG_EVENT, notifyBotConfigChanged } from '@/components/BotToggle';
 import { ChatbotModal } from './ChatbotModal';
 
 interface WhatsAppSettingsModalProps {
@@ -86,6 +87,13 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
       } catch {}
     }
     loadConfig();
+  }, []);
+
+  // Stay in sync with the header kill-switch (and any other config writer).
+  React.useEffect(() => {
+    const refresh = () => setConfig(applyBrainDefaults(getWhatsAppConfig()));
+    window.addEventListener(BOT_CONFIG_EVENT, refresh);
+    return () => window.removeEventListener(BOT_CONFIG_EVENT, refresh);
   }, []);
 
   // Dynamic sample preview lead
@@ -156,6 +164,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
       });
       if (!response.ok) throw new Error('Could not save server settings');
       saveWhatsAppConfig(config);
+      notifyBotConfigChanged();
       setSaveFeedback(true);
     } catch (e) {
       console.warn('Config save error:', e);
