@@ -1,9 +1,10 @@
 import { Lead } from './types';
 import { STATUS_LABELS, Locale } from './i18n';
+import { normalizeToInternational } from './phone';
 
 export function formatPhoneForWhatsApp(phone: string): string {
-  const cleaned = phone.replace(/[^\d]/g, '');
-  return cleaned;
+  // International digits without "+" — Jordan-aware (07... -> 962...).
+  return normalizeToInternational(phone || '');
 }
 
 export function exportToCSV(leads: Lead[], filename = 'leads.csv', locale: Locale = 'ar') {

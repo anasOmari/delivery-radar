@@ -31,6 +31,12 @@ import {
   getWhatsAppConfig,
   saveWhatsAppConfig,
 } from '@/lib/whatsappProviders';
+import {
+  DEFAULT_BOT_IDENTITY,
+  DEFAULT_BOT_SERVICES,
+  DEFAULT_BOT_PRICING,
+  DEFAULT_BOT_RULES,
+} from '@/lib/chatbotConfig';
 import { saveWhatsAppConfigToSupabase, getWhatsAppConfigFromSupabase } from '@/lib/supabase';
 import { ChatbotModal } from './ChatbotModal';
 
@@ -884,12 +890,12 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                     {locale === 'ar' ? 'اسم وهوية المشروع الرسمية' : 'Business Identity'}
                   </label>
-                  <input
-                    type="text"
-                    placeholder="خدمات قطرة الندى للتوصيل والنقل السريع"
-                    value={config.businessName || ''}
+                  <textarea
+                    rows={4}
+                    placeholder="نظام استقبال طلبات رسمي لشركة قطرة الندى..."
+                    value={config.businessName || DEFAULT_BOT_IDENTITY}
                     onChange={e => setConfig(prev => ({ ...prev, businessName: e.target.value }))}
-                    style={{ width: '100%', padding: '9px 12px' }}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem', lineHeight: '1.5' }}
                   />
                 </div>
 
@@ -899,9 +905,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                     {locale === 'ar' ? 'الخدمات المتاحة وتفاصيلها (يقرأها الذكاء الاصطناعي ويجيب بها)' : 'Available Services & Offerings'}
                   </label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     placeholder="1. توصيل وجبات وأطعمة للمطاعم ساخنة وسريعة.&#10;2. شحن وتوصيل فوري لطرود المتاجر والأونلاين.&#10;3. عقود نقل وتوصيل موظفين وكوادر شركات.&#10;4. مشاوير ركاب خاصة VIP."
-                    value={config.servicesText || ''}
+                    value={config.servicesText || DEFAULT_BOT_SERVICES}
                     onChange={e => setConfig(prev => ({ ...prev, servicesText: e.target.value }))}
                     style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem', lineHeight: '1.4' }}
                   />
@@ -913,9 +919,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                     {locale === 'ar' ? 'تعديلات الأسعار والعروض الخاصة' : 'Pricing Details & Special Offers'}
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     placeholder="توصيل داخلي: 2 د.أ | عمّان: 3 د.أ | المحافظات (إربد، العقبة، الزرقاء): 5 د.أ | خصم خاص للمطاعم بأكثر من 20 طلب يومياً."
-                    value={config.pricingText || ''}
+                    value={config.pricingText || DEFAULT_BOT_PRICING}
                     onChange={e => setConfig(prev => ({ ...prev, pricingText: e.target.value }))}
                     style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem' }}
                   />
@@ -927,9 +933,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
                     {locale === 'ar' ? 'توجيهات مخصصة لأسلوب رد الذكاء الاصطناعي (Custom System Prompt)' : 'Custom System Prompt & Persona'}
                   </label>
                   <textarea
-                    rows={3}
+                    rows={5}
                     placeholder="تحدث بلهجة أردنية ودودة ومحترمة. ركز دائماً على ميزة الدفع كاش مسبقاً لصاحب المحل، وإذا طلب العميل كابتن اطلب منه موقعه ورقم المستلم فوراً..."
-                    value={config.customRules || config.customSystemPrompt || ''}
+                    value={config.customRules || config.customSystemPrompt || DEFAULT_BOT_RULES}
                     onChange={e => setConfig(prev => ({ ...prev, customRules: e.target.value, customSystemPrompt: e.target.value }))}
                     style={{ width: '100%', padding: '9px 12px', fontSize: '0.82rem' }}
                   />

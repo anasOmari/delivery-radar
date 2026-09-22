@@ -124,8 +124,11 @@ export async function POST(req: NextRequest) {
 ⚡ الكابتن سيدفع لك كامل المبلغ كاش مسبقاً لحظة استلام الطلب من موقعك! 💵`;
     } else {
       // Process with Smart AI Chatbot Engine (LLM + NLP)
+      // Pass the FULL saved brain (identity, services, pricing, rules, tone...)
+      // so the order-taking mindset actually reaches the live bot.
       botReply = await processChatbotMessageAI(incomingText, chatId, {
-        enabled: config.chatbotEnabled !== false,
+        ...config,
+        chatbotEnabled: config.chatbotEnabled !== false,
         managerPhone: managerPhone,
         aiApiKey: config.aiApiKey || process.env.GEMINI_API_KEY,
       });

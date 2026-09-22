@@ -4,11 +4,14 @@ import {
   WhatsAppMessage,
   WhatsAppResponse,
 } from '../whatsappProviders';
+import { normalizeToInternational } from '../phone';
 
 function cleanPhoneForGreenApi(phone: string): string {
-  // Remove non-digit characters
-  let digits = phone.replace(/[^\d]/g, '');
-  // If starts with 00, replace with nothing
+  // International digits (Jordan-aware): 0788779463 -> 962788779463
+  const normalized = normalizeToInternational(phone || '');
+  if (normalized) return normalized;
+  // Fallback: digits only, strip 00 prefix
+  let digits = (phone || '').replace(/[^\d]/g, '');
   if (digits.startsWith('00')) {
     digits = digits.substring(2);
   }

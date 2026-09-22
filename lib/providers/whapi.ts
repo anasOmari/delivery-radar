@@ -5,8 +5,10 @@ import {
   WhatsAppResponse,
 } from '../whatsappProviders';
 
+import { normalizeToInternational } from '../phone';
+
 function cleanPhoneForAPI(phone: string): string {
-  return phone.replace(/[^\d]/g, '');
+  return normalizeToInternational(phone || '');
 }
 
 export const WhapiProvider: WhatsAppProviderInterface = {

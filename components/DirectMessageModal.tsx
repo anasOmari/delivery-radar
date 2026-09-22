@@ -12,15 +12,15 @@ import {
   Loader2,
   CheckCircle2,
   ShieldCheck,
-  ShieldAlert,
   Copy,
   Layers,
-  Sparkles,
-  X
+  Sparkles
 } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
-import { getWhatsAppConfig, DEFAULT_AUTO_MESSAGE_TEMPLATE, WhatsAppConfig } from '@/lib/whatsappProviders';
+import { getWhatsAppConfig, saveWhatsAppConfig, DEFAULT_AUTO_MESSAGE_TEMPLATE, WhatsAppConfig } from '@/lib/whatsappProviders';
+import { getWhatsAppConfigFromSupabase } from '@/lib/supabase';
 import { formatPhoneForWhatsApp } from '@/lib/exporter';
+import { normalizeToInternational, phoneValidationError } from '@/lib/phone';
 import { MARKETING_TEMPLATES, applyTemplate } from '@/lib/opportunity';
 import { Lead } from '@/lib/types';
 
@@ -46,6 +46,43 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
   const [checkResult, setCheckResult] = useState<{ hasWhatsApp: boolean; message: string } | null>(null);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  // Refresh config from server/Supabase on mount: localStorage alone may be
+  // stale (e.g. credentials saved on another browser), which previously hid
+  // the API send button or sent with empty credentials.
+  useEffect(() => {
+    let cancelled = false;
+    async function refreshConfig() {
+      try {
+        const dbConfig = await getWhatsAppConfigFromSupabase();
+        if (!cancelled && dbConfig && (dbConfig.provider !== 'none' || dbConfig.greenapi?.idInstance)) {
+          const merged = { ...getWhatsAppConfig(), ...dbConfig };
+          setConfig(merged);
+          saveWhatsAppConfig(merged);
+          return;
+        }
+      } catch {}
+      try {
+        const r = await fetch('/api/whatsapp/config');
+        const data = await r.json();
+        if (!cancelled && data?.config && (data.config.provider !== 'none' || data.config.greenapi?.idInstance)) {
+          const merged = { ...getWhatsAppConfig(), ...data.config };
+          setConfig(merged);
+          saveWhatsAppConfig(merged);
+        }
+      } catch {} finally {
+        if (!cancelled) setConfigLoading(false);
+      }
+      if (!cancelled) setConfigLoading(false);
+    }
+    refreshConfig();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Normalized international number preview + live validation
+  const normalizedPhone = normalizeToInternational(recipientPhone || '');
+  const phoneError = recipientPhone.trim() ? phoneValidationError(normalizedPhone, locale) : null;
 
   // Initialize and update message based on inputs and template
   useEffect(() => {
@@ -56,6 +93,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
       category: recipientCategory.trim() || (locale === 'ar' ? 'النشاط' : 'Business'),
       phone: recipientPhone.trim(),
     };
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- derived template text synced on input/config change
     setMessageText(applyTemplate(rawTemplate, dummyLead as Lead));
   }, [recipientName, recipientCity, recipientCategory, config.autoMessageTemplate, locale, recipientPhone]);
 
@@ -75,6 +113,13 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
 
   const handleCheckWhatsApp = async () => {
     if (!recipientPhone.trim()) return;
+    if (phoneError || !normalizedPhone) {
+      setCheckResult({
+        hasWhatsApp: false,
+        message: phoneError || (locale === 'ar' ? '❌ رقم الهاتف غير صالح' : '❌ Invalid phone number'),
+      });
+      return;
+    }
     setIsChecking(true);
     setCheckResult(null);
 
@@ -84,7 +129,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config,
-          message: { to: recipientPhone },
+          message: { to: normalizedPhone },
           action: 'checkNumber',
         }),
       });
@@ -113,6 +158,31 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
 
   const handleSendViaAPI = async () => {
     if (!recipientPhone.trim() || !messageText.trim()) return;
+    if (phoneError || !normalizedPhone) {
+      setSendResult({
+        success: false,
+        message: phoneError || (locale === 'ar' ? '❌ رقم الهاتف غير صالح — أدخل رقماً بصيغة دولية أو محلية أردنية (07...) ' : '❌ Invalid phone number'),
+      });
+      return;
+    }
+    if (config.provider === 'none') {
+      setSendResult({
+        success: false,
+        message: locale === 'ar'
+          ? '❌ لا توجد بوابة إرسال مفعّلة. افتح إعدادات الواتساب واختر GREEN-API ثم احفظ البيانات.'
+          : '❌ No sending gateway active. Open WhatsApp settings and configure GREEN-API.',
+      });
+      return;
+    }
+    if (config.provider === 'greenapi' && (!config.greenapi?.idInstance || !config.greenapi?.apiTokenInstance)) {
+      setSendResult({
+        success: false,
+        message: locale === 'ar'
+          ? '❌ بيانات Green-API ناقصة (idInstance / apiTokenInstance). افتح الإعدادات وأكمل الحفظ ثم أعد المحاولة.'
+          : '❌ Green-API credentials missing. Open settings, save them, then retry.',
+      });
+      return;
+    }
     setIsSending(true);
     setSendResult(null);
 
@@ -123,7 +193,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
         body: JSON.stringify({
           config,
           message: {
-            to: recipientPhone,
+            to: normalizedPhone,
             text: messageText,
           },
           action: 'send',
@@ -135,10 +205,10 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
         setSendResult({
           success: true,
           message: locale === 'ar'
-            ? `✅ تم إرسال الرسالة إلى (${recipientPhone}) بنجاح عبر Green-API!`
-            : `✅ Message delivered to (${recipientPhone}) via Green-API!`,
+            ? `✅ تم إرسال الرسالة إلى (${normalizedPhone}) بنجاح عبر Green-API!`
+            : `✅ Message delivered to (${normalizedPhone}) via Green-API!`,
         });
-        if (onSuccess) onSuccess(recipientPhone, messageText);
+        if (onSuccess) onSuccess(normalizedPhone, messageText);
         setTimeout(() => {
           onClose();
         }, 1500);
@@ -159,10 +229,17 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
   };
 
   const handleOpenWaMe = () => {
+    if (phoneError || !normalizedPhone) {
+      setSendResult({
+        success: false,
+        message: phoneError || (locale === 'ar' ? '❌ رقم الهاتف غير صالح' : '❌ Invalid phone number'),
+      });
+      return;
+    }
     const cleanPhone = formatPhoneForWhatsApp(recipientPhone);
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
     window.open(url, '_blank');
-    if (onSuccess) onSuccess(recipientPhone, messageText);
+    if (onSuccess) onSuccess(cleanPhone, messageText);
   };
 
   const handleCopy = () => {
@@ -278,6 +355,22 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
                   >
                     {checkResult.hasWhatsApp ? <Check size={12} /> : <AlertTriangle size={12} />}
                     <span>{checkResult.message}</span>
+                  </div>
+                )}
+                {recipientPhone.trim() && !phoneError && normalizedPhone && (
+                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--text-tertiary)', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right' }}>
+                    {locale === 'ar' ? 'سيُرسل إلى: +' : 'Will send to: +'}{normalizedPhone}
+                  </div>
+                )}
+                {phoneError && recipientPhone.trim() && (
+                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--status-red, #dc2626)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <AlertTriangle size={12} />
+                    <span>{phoneError}</span>
+                  </div>
+                )}
+                {configLoading && (
+                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--text-tertiary)' }}>
+                    {locale === 'ar' ? 'جاري تحميل إعدادات الإرسال...' : 'Loading sender settings...'}
                   </div>
                 )}
               </div>
@@ -447,7 +540,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
               <button
                 className="btn btn-whatsapp"
                 onClick={handleSendViaAPI}
-                disabled={!recipientPhone.trim() || isSending}
+                disabled={!recipientPhone.trim() || !!phoneError || isSending || configLoading}
                 style={{
                   background: 'var(--whatsapp-button)',
                   color: '#fff',
@@ -470,7 +563,7 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
             <button
               className="btn btn-secondary"
               onClick={handleOpenWaMe}
-              disabled={!recipientPhone.trim()}
+              disabled={!recipientPhone.trim() || !!phoneError}
               style={hasApiProvider ? { border: '1px dashed var(--border-default)' } : {}}
             >
               <MessageCircle size={16} />

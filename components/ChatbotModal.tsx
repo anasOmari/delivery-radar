@@ -62,8 +62,10 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
     setIsTyping(true);
 
     try {
+      // Pass the FULL saved brain so the simulator tests the real live behavior.
       const replyText = await processChatbotMessageAI(text, 'simulator_user', {
-        enabled: true,
+        ...config,
+        chatbotEnabled: true,
         managerPhone: config.managerPhone || '0788779463',
         aiApiKey: config.aiApiKey,
       });

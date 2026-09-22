@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import {
+  DEFAULT_BOT_IDENTITY,
+  DEFAULT_BOT_SERVICES,
+  DEFAULT_BOT_PRICING,
+  DEFAULT_BOT_RULES,
+} from '@/lib/chatbotConfig';
 
 let memoryConfig: any = {
   provider: 'greenapi',
@@ -10,6 +16,11 @@ let memoryConfig: any = {
   },
   chatbotEnabled: true,
   managerPhone: '0788779463',
+  // Default bot brain (order-intake & booking mindset); overridden by saved values.
+  businessName: DEFAULT_BOT_IDENTITY,
+  servicesText: DEFAULT_BOT_SERVICES,
+  pricingText: DEFAULT_BOT_PRICING,
+  customRules: DEFAULT_BOT_RULES,
 };
 
 export async function getServerWhatsAppConfigAsync() {
