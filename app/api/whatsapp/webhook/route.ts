@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 import type { ChatMessage } from '@/lib/chatbotConfig';
 
 export async function GET() {
-  return NextResponse.json({ status: 'online', service: 'WhatsApp booking webhook', bookingStorage: await bookingStorageAvailable() ? 'ready' : 'unavailable' });
+  const bookingStorage = !process.env.DATABASE_URL ? 'not_configured' : await bookingStorageAvailable() ? 'ready' : 'connection_failed';
+  return NextResponse.json({ status: 'online', service: 'WhatsApp booking webhook', bookingStorage });
 }
 
 function incomingMessage(body: Record<string, any>): { text: string; isLocation: boolean } {
