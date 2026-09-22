@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   MessageCircle,
   X,
@@ -16,12 +16,14 @@ import {
   AlertTriangle,
   Loader2,
   FileText,
+  Zap,
 } from 'lucide-react';
 import { Lead, LeadStatus } from '@/lib/types';
 import { formatPhoneForWhatsApp } from '@/lib/exporter';
 import { MARKETING_TEMPLATES, DRIP_SEQUENCES, applyTemplate } from '@/lib/opportunity';
 import { useLanguage } from '@/lib/LanguageContext';
 import { getWhatsAppConfig, DEFAULT_AUTO_MESSAGE_TEMPLATE, WhatsAppConfig } from '@/lib/whatsappProviders';
+import { normalizeToInternational, isValidPhone } from '@/lib/phone';
 import { WhatsAppSettingsModal } from './WhatsAppSettingsModal';
 
 interface WhatsAppModalProps {
@@ -51,6 +53,13 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
   const [sendError, setSendError] = useState<string | null>(null);
 
   const [config, setConfig] = useState<WhatsAppConfig>(getWhatsAppConfig());
+
+  // Bulk auto-send (campaign mode): one click sends to all leads sequentially.
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; sent: number; failed: number; skipped: number } | null>(null);
+  const [bulkReport, setBulkReport] = useState<{ sent: number; failed: number; skipped: number; total: number; cancelled: boolean; errors: string[] } | null>(null);
+  const [skipNoWhatsApp, setSkipNoWhatsApp] = useState(true);
+  const bulkCancelRef = useRef(false);
 
   const activeLead = isCampaignMode ? campaignLeads[currentIndex] : initialLead;
 
@@ -160,6 +169,73 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
     } else {
       onClose();
     }
+  };
+
+  /** Personalized message for any lead using the currently selected tab/template. */
+  const buildMessageForLead = (target: Lead): string => {
+    if (activeTab === 'templates') {
+      return applyTemplate(currentTemplateObj.template, target);
+    }
+    if (activeTab === 'drip') {
+      const drip = DRIP_SEQUENCES.find(d => d.step === selectedDripStep);
+      if (drip) return applyTemplate(drip.template, target);
+    }
+    const autoTemplate = config.autoMessageTemplate || DEFAULT_AUTO_MESSAGE_TEMPLATE;
+    return applyTemplate(autoTemplate, target);
+  };
+
+  /** Campaign bulk auto-send: one click dispatches to every valid WhatsApp number. */
+  const handleBulkSend = async () => {
+    if (!hasApiProvider || bulkSending || !isCampaignMode || campaignLeads.length === 0) return;
+    bulkCancelRef.current = false;
+    setBulkSending(true);
+    setBulkReport(null);
+
+    const delayMs = Math.max(1000, (config.sendDelaySeconds || 2) * 1000);
+    const total = campaignLeads.length;
+    let sent = 0, failed = 0, skipped = 0;
+    const errors: string[] = [];
+    setBulkProgress({ done: 0, total, sent: 0, failed: 0, skipped: 0 });
+
+    for (let i = 0; i < campaignLeads.length; i++) {
+      if (bulkCancelRef.current) break;
+      const target = campaignLeads[i];
+      const normalized = normalizeToInternational(target.phone || '');
+      if (!normalized || !isValidPhone(normalized) || (skipNoWhatsApp && target.hasWhatsApp === false)) {
+        skipped++;
+        setBulkProgress({ done: i + 1, total, sent, failed, skipped });
+        continue;
+      }
+      try {
+        const res = await fetch('/api/whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            config,
+            message: { to: normalized, text: buildMessageForLead(target) },
+            action: 'send',
+          }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          sent++;
+          onStatusChange(target.id, 'contacted');
+        } else {
+          failed++;
+          if (errors.length < 5) errors.push(`${target.name}: ${result.error || 'failed'}`);
+        }
+      } catch {
+        failed++;
+        if (errors.length < 5) errors.push(`${target.name}: server error`);
+      }
+      setBulkProgress({ done: i + 1, total, sent, failed, skipped });
+      if (i < campaignLeads.length - 1 && !bulkCancelRef.current) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+
+    setBulkSending(false);
+    setBulkReport({ sent, failed, skipped, total, cancelled: bulkCancelRef.current, errors });
   };
 
   const advanceToNextLead = () => {
@@ -318,6 +394,77 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
             </div>
           )}
 
+          {/* Bulk auto-send progress / report (campaign mode) */}
+          {isCampaignMode && hasApiProvider && bulkProgress && (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(37, 211, 102, 0.06)',
+                border: '1px solid rgba(37, 211, 102, 0.35)',
+                fontSize: '0.82rem',
+              }}
+            >
+              <div className="flex-between" style={{ marginBottom: '8px' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {bulkSending
+                    ? (locale === 'ar' ? `🚀 جاري الإرسال التلقائي... (${bulkProgress.done}/${bulkProgress.total})` : `🚀 Auto-sending... (${bulkProgress.done}/${bulkProgress.total})`)
+                    : (locale === 'ar' ? `📊 نتيجة الإرسال التلقائي (${bulkProgress.done}/${bulkProgress.total})` : `📊 Bulk send report (${bulkProgress.done}/${bulkProgress.total})`)}
+                </strong>
+                {bulkSending && (
+                  <button type="button" className="btn btn-secondary btn-xs" onClick={() => { bulkCancelRef.current = true; }}>
+                    <X size={12} />
+                    <span>{locale === 'ar' ? 'إيقاف' : 'Stop'}</span>
+                  </button>
+                )}
+              </div>
+              <div style={{ height: '8px', borderRadius: '4px', background: 'var(--bg-surface)', overflow: 'hidden', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${bulkProgress.total ? Math.round((bulkProgress.done / bulkProgress.total) * 100) : 0}%`,
+                    background: '#25D366',
+                    transition: 'width 0.3s',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontWeight: 700 }}>
+                <span style={{ color: 'var(--status-green, #16a34a)' }}>✅ {bulkProgress.sent} {locale === 'ar' ? 'تم' : 'sent'}</span>
+                <span style={{ color: 'var(--status-red, #dc2626)' }}>❌ {bulkProgress.failed} {locale === 'ar' ? 'فشل' : 'failed'}</span>
+                <span style={{ color: 'var(--text-tertiary)' }}>⏭️ {bulkProgress.skipped} {locale === 'ar' ? 'تُخطي' : 'skipped'}</span>
+              </div>
+              {bulkReport && !bulkSending && (
+                <div style={{ marginTop: '8px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  <div>
+                    {bulkReport.cancelled
+                      ? (locale === 'ar' ? '⏹️ تم إيقاف الإرسال يدوياً.' : '⏹️ Sending stopped manually.')
+                      : (locale === 'ar'
+                        ? `انتهى الإرسال: ${bulkReport.sent} ناجح، ${bulkReport.failed} فاشل، ${bulkReport.skipped} متخطى من أصل ${bulkReport.total}.`
+                        : `Finished: ${bulkReport.sent} sent, ${bulkReport.failed} failed, ${bulkReport.skipped} skipped of ${bulkReport.total}.`)}
+                  </div>
+                  {bulkReport.errors.length > 0 && (
+                    <div style={{ marginTop: '4px', fontSize: '0.76rem' }}>
+                      {bulkReport.errors.map((e, idx) => <div key={idx}>• {e}</div>)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Skip non-WhatsApp numbers option (campaign bulk mode) */}
+          {isCampaignMode && hasApiProvider && !bulkSending && !bulkReport && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={skipNoWhatsApp}
+                onChange={e => setSkipNoWhatsApp(e.target.checked)}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <span>{locale === 'ar' ? 'تخطي الأرقام المسجلة بدون واتساب (أرضي/غير صالح) أثناء الإرسال التلقائي' : 'Skip non-WhatsApp numbers during auto-send'}</span>
+            </label>
+          )}
+
           {/* Template Selection Tabs */}
           <div className="whatsapp-tab-group" style={{ display: 'flex', gap: '6px' }}>
             <button
@@ -444,11 +591,35 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
           )}
 
           <div className="flex-align gap-2">
+            {isCampaignMode && hasApiProvider && (
+              <button
+                className="btn btn-whatsapp"
+                onClick={handleBulkSend}
+                disabled={bulkSending || campaignLeads.length === 0}
+                title={locale === 'ar' ? 'إرسال تلقائي واحد لكل جهات الحملة' : 'One-click auto-send to the whole campaign'}
+                style={{
+                  background: '#128C7E',
+                  color: '#fff',
+                  borderColor: '#128C7E',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 700,
+                }}
+              >
+                {bulkSending ? <Loader2 size={16} className="spin" /> : <Zap size={16} />}
+                <span>
+                  {bulkSending
+                    ? (locale === 'ar' ? 'جاري الإرسال للكل...' : 'Sending to all...')
+                    : (locale === 'ar' ? `إرسال تلقائي للكل 🚀 (${campaignLeads.length})` : `Auto-send to all 🚀 (${campaignLeads.length})`)}
+                </span>
+              </button>
+            )}
             {hasApiProvider && (
               <button
                 className="btn btn-whatsapp"
                 onClick={handleSendViaAPI}
-                disabled={!activeLead.phone || sendStatus === 'sending' || sendStatus === 'sent'}
+                disabled={!activeLead.phone || sendStatus === 'sending' || sendStatus === 'sent' || bulkSending}
                 style={{
                   background: '#25D366',
                   color: '#fff',
@@ -477,7 +648,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
             <button
               className="btn btn-secondary"
               onClick={handleOpenWhatsApp}
-              disabled={!activeLead.phone}
+              disabled={!activeLead.phone || bulkSending}
               style={hasApiProvider ? { border: '1px dashed var(--border-default)' } : {}}
             >
               <MessageCircle size={16} />

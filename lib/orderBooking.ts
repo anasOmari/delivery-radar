@@ -17,6 +17,16 @@ const cities = ['عمان', 'اربد', 'الزرقاء', 'العقبه', 'ال�
 const allPlaces = [...ammanAreas, ...cities];
 const has = (text: string, words: string[]) => words.some(word => text.includes(normalize(word)));
 const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
+const startsNewOrder = (value: string) => /(?:^|\s)(?:بدي|بدنا|اريد|حاب|عايز)\s+(?:توصيل|مشوار|اروح|احجز)|(?:^|\s)(?:طلب جديد|توصيل جديد|احجز لي|حجز جديد)|^توصيل\s/.test(normalize(value));
+const orderFinished = (value: string) => /تم تسجيل طلبك رقم|تم حفظ طلبك رقم|رقم الطلب:/.test(value);
+
+function sessionMessages(history: ChatMessage[], current: string): string[] {
+  const lastFinished = history.findLastIndex(message => message.role !== 'user' && orderFinished(message.text));
+  const messages = history.slice(lastFinished + 1).filter(message => message.role === 'user').map(message => message.text);
+  messages.push(current);
+  const latestStart = messages.findLastIndex(startsNewOrder);
+  return messages.slice(Math.max(latestStart, 0)).slice(-20);
+}
 
 function placeAfter(text: string, prepositions: RegExp): string | undefined {
   const match = text.match(prepositions);
@@ -68,7 +78,7 @@ function getPrice(details: BookingDetails, config: BotSettings): Pick<BookingDet
 
 export function collectBookingDetails(history: ChatMessage[], current: string, config: BotSettings): BookingDetails {
   const details: BookingDetails = { active: false };
-  const userMessages = [...history.filter(message => message.role === 'user').map(message => message.text), current].slice(-20);
+  const userMessages = sessionMessages(history, current);
   for (const text of userMessages) {
     const norm = normalize(text);
     if (has(norm, ['بدي توصيل', 'توصيل', 'حجز', 'كابتن', 'عندي طلب', 'اوردر', 'بدي مشوار']) || /^1$/.test(norm)) details.active = true;
@@ -88,12 +98,18 @@ export function collectBookingDetails(history: ChatMessage[], current: string, c
 export function isBookingConfirmation(text: string, history: ChatMessage[]): boolean {
   const norm = normalize(text).replace(/[.!؟?]/g, '');
   const lastReply = [...history].reverse().find(message => message.role !== 'user')?.text || '';
-  return Boolean(lastReply.includes('هل أثبت الطلب') && /^(موافق|نعم|ايوه|ايوا|اكد|اكيد|ثبت|ثبته|احجز|تمام|ok|okay|yes|confirm)(\s+(الطلب|الحجز|نهائيا))?$/.test(norm));
+  const awaiting = /هل أثبت الطلب|هل تؤكد الطلب|تعذر تثبيته رسميًا/.test(lastReply);
+  const explicit = /(?:^|\s)(?:ثبت|ثبته|اكد|أكد|احجز|موافق)(?:\s|$)/.test(norm);
+  const shortYes = /^(?:نعم|ايوه|ايوا|اكيد|تمام|ok|okay|yes|confirm)$/.test(norm);
+  return awaiting && !/(?:لا\s+تثبت|لا\s+تحجز|الغ[يِ]|إلغاء)/.test(norm) && (explicit || shortYes);
 }
 
 export function bookingReply(text: string, config: BotSettings, history: ChatMessage[] = []): string | null {
+  const norm = normalize(text);
+  if (/^(?:شكرا|شكرًا|يسلمو|يعطيك العافيه|thanks|thank you)[!.؟?\s]*$/.test(norm)) return 'العفو، بالخدمة دائمًا.';
   const details = collectBookingDetails(history, text, config);
   if (!details.active) return null;
+  if (/^(?:لا والله مافي|ما في|لا مافي|مافي|لا يوجد تفاصيل|هيك تمام)$/.test(norm)) return 'تمام، ما في تفاصيل إضافية. هل أثبت الطلب نهائيًا للمتابعة مع الإدارة؟';
   const confirm = isBookingConfirmation(text, history);
   const summary = [
     details.when && `الوقت: ${details.when}`,
@@ -104,7 +120,7 @@ export function bookingReply(text: string, config: BotSettings, history: ChatMes
   ].filter(Boolean).join('، ');
   if (confirm) {
     if (!details.origin || !details.destination || !details.when) return `لإكمال طلبك أحتاج ${!details.origin ? 'موقع الانطلاق' : !details.destination ? 'الوجهة' : 'الوقت المطلوب'} أولًا. ${summary}`;
-    return `تمام، ثبتنا تفاصيل طلبك في هذه المحادثة: ${summary}. ${details.phone ? `رقم المستلم: ${details.phone}. ` : ''}الطلب جاهز للمتابعة مع الإدارة، وسنؤكد لك تعيين الكابتن بعد ربط نظام الحجز الرسمي. لم يُرسل كابتن بعد.`;
+    return `سأثبت طلبك الآن: ${summary}.`;
   }
   const preface = summary ? `تمام يا غالي، سجلت تفاصيل الطلب: ${summary}. ` : 'تمام يا غالي، بسجّل طلبك. ';
   if (!details.destination) return `${preface}وين الوجهة؟`;
