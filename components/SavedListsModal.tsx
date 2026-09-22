@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  X,
   FolderKanban,
   Plus,
   Trash2,
@@ -16,6 +15,10 @@ import {
 } from 'lucide-react';
 import { Lead } from '@/lib/types';
 import { useLanguage } from '@/lib/LanguageContext';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Field, TextInput } from './ui/Field';
+import { Banner } from './ui/StatusPill';
 
 export interface CampaignList {
   id: string;
@@ -37,7 +40,7 @@ export const SavedListsModal: React.FC<SavedListsModalProps> = ({
   onLoadList,
   onClose
 }) => {
-  const { locale, t } = useLanguage();
+  const { locale } = useLanguage();
   const [lists, setLists] = useState<CampaignList[]>(() => {
     try {
       const stored = localStorage.getItem('saved_campaign_lists');
@@ -101,165 +104,151 @@ export const SavedListsModal: React.FC<SavedListsModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-lg" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-header-icon">
-              <FolderKanban size={18} />
-            </div>
+    <Modal
+      onClose={onClose}
+      size="lg"
+      icon={<FolderKanban size={18} />}
+      iconTone="brand"
+      title="إدارة قوائم الحملات والعملاء المحفوظة"
+      footer={
+        <Button type="button" variant="secondary" onClick={onClose}>
+          إغلاق
+        </Button>
+      }
+    >
+      {actionMessage && (
+        <Banner tone="green" icon={<Check size={16} />}>
+          <span className="ui-flex-fill">{actionMessage}</span>
+          <button className="btn-close" onClick={() => setActionMessage(null)}>×</button>
+        </Banner>
+      )}
+
+      {/* Create Campaign Card */}
+      <div className="saved-list-create-card">
+        {!showCreateForm ? (
+          <div className="flex-between">
             <div>
-              <h3 className="modal-title">إدارة قوائم الحملات والعملاء المحفوظة</h3>
+              <h4 className="create-card-title">حفظ النتائج الحالية كقائمة حملة جديدة</h4>
+              <p className="create-card-sub">
+                سيتم حفظ {currentLeads.length} عميل حالي في قائمة منفصلة للرجوع إليها في أي وقت.
+              </p>
             </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              icon={<Plus size={15} />}
+              disabled={currentLeads.length === 0}
+              onClick={() => setShowCreateForm(true)}
+            >
+              حفظ النتائج كقائمة
+            </Button>
           </div>
-          <button className="modal-close-btn" onClick={onClose} title="إغلاق">
-            <X size={16} />
-          </button>
+        ) : (
+          <form onSubmit={handleCreateListFromCurrent}>
+            <Field label="اسم القائمة الجديدة (مثال: أطباء أسنان الرياض - مارس):" htmlFor="new-list-name">
+              <div className="flex-align gap-2">
+                <TextInput
+                  id="new-list-name"
+                  type="text"
+                  autoFocus
+                  className="ui-flex-fill"
+                  placeholder="اكتب اسم القائمة..."
+                  value={newListName}
+                  onChange={e => setNewListName(e.target.value)}
+                />
+                <Button type="submit" variant="primary" size="sm">
+                  حفظ
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowCreateForm(false)}
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </Field>
+          </form>
+        )}
+      </div>
+
+      {/* Saved Lists Overview */}
+      <div>
+        <div className="flex-between ui-mb-2">
+          <span className="subtext">
+            القوائم المحفوظة لديك ({lists.length}):
+          </span>
         </div>
 
-        {/* Body */}
-        <div className="modal-body">
-          {actionMessage && (
-            <div className="notification-banner banner-success">
-              <div className="flex-align gap-2">
-                <Check size={16} />
-                <span>{actionMessage}</span>
-              </div>
-              <button className="btn-close" onClick={() => setActionMessage(null)}>×</button>
-            </div>
-          )}
-
-          {/* Create Campaign Card */}
-          <div className="saved-list-create-card">
-            {!showCreateForm ? (
-              <div className="flex-between">
-                <div>
-                  <h4 className="create-card-title">حفظ النتائج الحالية كقائمة حملة جديدة</h4>
-                  <p className="create-card-sub">
-                    سيتم حفظ {currentLeads.length} عميل حالي في قائمة منفصلة للرجوع إليها في أي وقت.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  disabled={currentLeads.length === 0}
-                  onClick={() => setShowCreateForm(true)}
-                >
-                  <Plus size={15} />
-                  <span>حفظ النتائج كقائمة</span>
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleCreateListFromCurrent}>
-                <label className="modal-label" style={{ marginBottom: '6px' }}>
-                  اسم القائمة الجديدة (مثال: أطباء أسنان الرياض - مارس):
-                </label>
-                <div className="flex-align gap-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    className="input-field"
-                    placeholder="اكتب اسم القائمة..."
-                    value={newListName}
-                    onChange={e => setNewListName(e.target.value)}
-                  />
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    حفظ
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => setShowCreateForm(false)}
-                  >
-                    إلغاء
-                  </button>
-                </div>
-              </form>
-            )}
+        {lists.length === 0 ? (
+          <div className="saved-lists-empty">
+            <FolderOpen size={38} className="empty-icon" />
+            <h4 className="empty-title">لا توجد قوائم حملات محفوظة حتى الآن</h4>
+            <p className="empty-sub">
+              {locale === 'ar' ? 'قم بالبحث وتصفية العملاء ثم اضغط على حفظ النتائج كقائمة لتنظيم جهودك.' : 'Search and filter leads, then click Save Results as List to organize your efforts.'}
+            </p>
           </div>
-
-          {/* Saved Lists Overview */}
-          <div>
-            <div className="flex-between" style={{ marginBottom: '10px' }}>
-              <span className="text-xs font-semibold subtext">
-                القوائم المحفوظة لديك ({lists.length}):
-              </span>
-            </div>
-
-            {lists.length === 0 ? (
-              <div className="saved-lists-empty">
-                <FolderOpen size={38} className="empty-icon" />
-                <h4 className="empty-title">لا توجد قوائم حملات محفوظة حتى الآن</h4>
-                <p className="empty-sub">
-                  {locale === 'ar' ? 'قم بالبحث وتصفية العملاء ثم اضغط على حفظ النتائج كقائمة لتنظيم جهودك.' : 'Search and filter leads, then click Save Results as List to organize your efforts.'}
-                </p>
-              </div>
-            ) : (
-              <div className="saved-lists-stack">
-                {lists.map(list => (
-                  <div key={list.id} className="saved-list-item-card">
-                    <div className="flex-align gap-3">
-                      <div className="list-icon-badge">
-                        <Layers size={18} />
-                      </div>
-                      <div>
-                        <h4 className="list-name-heading">{list.name}</h4>
-                        <div className="list-meta-row">
-                          <span className="flex-align gap-1">
-                            <MapPin size={11} />
-                            <span>{list.city}</span>
-                          </span>
-                          <span>•</span>
-                          <span className="flex-align gap-1">
-                            <Tag size={11} />
-                            <span>{list.category}</span>
-                          </span>
-                          <span>•</span>
-                          <span className="flex-align gap-1">
-                            <Calendar size={11} />
-                            <span>{list.createdAt}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex-align gap-2">
-                      <span className="list-count-badge">
-                        {list.leads?.length || 0} محل
+        ) : (
+          <div className="saved-lists-stack">
+            {lists.map(list => (
+              <div key={list.id} className="saved-list-item-card">
+                <div className="flex-align gap-3">
+                  <div className="list-icon-badge">
+                    <Layers size={18} />
+                  </div>
+                  <div>
+                    <h4 className="list-name-heading">{list.name}</h4>
+                    <div className="list-meta-row">
+                      <span className="flex-align gap-1">
+                        <MapPin size={11} />
+                        <span>{list.city}</span>
                       </span>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleSelect(list)}
-                        title="فتح وتحميل القائمة في الواجهة"
-                      >
-                        <span>فتح القائمة</span>
-                        <ArrowRight size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-icon btn-delete"
-                        onClick={() => handleDeleteList(list.id)}
-                        title="حذف القائمة"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <span>•</span>
+                      <span className="flex-align gap-1">
+                        <Tag size={11} />
+                        <span>{list.category}</span>
+                      </span>
+                      <span>•</span>
+                      <span className="flex-align gap-1">
+                        <Calendar size={11} />
+                        <span>{list.createdAt}</span>
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            إغلاق
-          </button>
-        </div>
+                <div className="flex-align gap-2">
+                  <span className="list-count-badge">
+                    {list.leads?.length || 0} محل
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleSelect(list)}
+                    title="فتح وتحميل القائمة في الواجهة"
+                  >
+                    <span>فتح القائمة</span>
+                    <ArrowRight size={13} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="btn-delete"
+                    onClick={() => handleDeleteList(list.id)}
+                    title="حذف القائمة"
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };

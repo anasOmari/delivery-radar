@@ -5,15 +5,7 @@ import {
   Bot,
   Send,
   Sparkles,
-  RotateCcw,
-  Phone,
-  Check,
-  Zap,
-  HelpCircle,
-  Copy,
-  ExternalLink,
-  MessageSquare,
-  X
+  RotateCcw
 } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { processChatbotMessageAI, ChatMessage } from '@/lib/chatbotEngine';
@@ -108,64 +100,25 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-box modal-lg chatbot-dialog"
+        className="modal-box modal-lg chatbot-dialog ui-chat-shell"
         onClick={e => e.stopPropagation()}
-        style={{
-          maxWidth: '680px',
-          height: '85dvh',
-          maxHeight: '750px',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: 0,
-          overflow: 'hidden',
-        }}
       >
         {/* Header */}
-        <div className="chatbot-header"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '14px 18px',
-            background: 'var(--bg-surface-elevated, #1a1a24)',
-            borderBottom: '1px solid var(--border-default)',
-          }}
-        >
+        <div className="chatbot-header ui-chat-header">
           <div className="flex-align gap-2">
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #25D366, #128C7E)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 0 10px rgba(37, 211, 102, 0.4)',
-              }}
-            >
+            <div className="ui-chat-avatar">
               <Bot size={20} />
             </div>
             <div>
               <div className="flex-align gap-2">
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <h3 className="ui-chat-title">
                   {locale === 'ar' ? 'تجربة الردود التلقائية' : 'Test auto-replies'}
                 </h3>
-                <span
-                  style={{
-                    fontSize: '0.65rem',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
-                    background: 'rgba(37, 211, 102, 0.2)',
-                    color: 'var(--whatsapp-color)',
-                    fontWeight: 700,
-                  }}
-                >
+                <span className="ui-status-pill ui-status-pill--whatsapp">
                   {locale === 'ar' ? 'محاكاة' : 'Simulation'}
                 </span>
               </div>
-              <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
+              <p className="ui-chat-sub">
                 {locale === 'ar' ? 'محاكاة حية للردود التلقائية التي سيتلقاها عملاؤك' : 'Real-time test of auto-replies for your clients'}
               </p>
             </div>
@@ -185,57 +138,23 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
         </div>
 
         {/* Chat Messages Area */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '16px',
-            background: 'var(--bg-surface, #0f0f14)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}
-        >
+        <div className="ui-chat-messages">
           {messages.map((msg, index) => {
             const isBot = msg.role === 'bot';
             return (
               <div
                 key={index}
-                style={{
-                  display: 'flex',
-                  justifyContent: isBot ? 'flex-start' : 'flex-end',
-                }}
+                className={`ui-chat-row ${isBot ? 'ui-chat-row--bot' : 'ui-chat-row--user'}`}
               >
-                <div
-                  style={{
-                    maxWidth: '85%',
-                    padding: '10px 14px',
-                    borderRadius: isBot ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
-                    background: isBot ? 'var(--bg-surface-elevated, #1c1c28)' : '#075E54',
-                    color: isBot ? 'var(--text-primary)' : '#fff',
-                    border: isBot ? '1px solid var(--border-default)' : 'none',
-                    fontSize: '0.86rem',
-                    lineHeight: 1.55,
-                    whiteSpace: 'pre-wrap',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                    position: 'relative',
-                  }}
-                >
+                <div className={`ui-chat-bubble ${isBot ? 'ui-chat-bubble--bot' : 'ui-chat-bubble--user'}`}>
                   {isBot && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', fontSize: '0.72rem', color: 'var(--whatsapp-color)', fontWeight: 700 }}>
+                    <div className="ui-chat-botlabel">
                       <Sparkles size={11} />
                       <span>قطرة الندى AI Bot</span>
                     </div>
                   )}
                   <div>{msg.text}</div>
-                  <div
-                    style={{
-                      fontSize: '0.65rem',
-                      color: isBot ? 'var(--text-secondary)' : 'rgba(255,255,255,0.8)',
-                      textAlign: isBot ? 'left' : 'right',
-                      marginTop: '4px',
-                    }}
-                  >
+                  <div className={`ui-chat-meta ${isBot ? 'ui-chat-meta--bot' : 'ui-chat-meta--user'}`}>
                     {msg.timestamp}
                   </div>
                 </div>
@@ -244,20 +163,8 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
           })}
 
           {isTyping && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <div
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: '14px',
-                  background: 'var(--bg-surface-elevated, #1c1c28)',
-                  border: '1px solid var(--border-default)',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-tertiary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
+            <div className="ui-chat-row ui-chat-row--bot">
+              <div className="ui-chat-typing">
                 <span className="spin">&#8635;</span>
                 <span>{locale === 'ar' ? 'البوت يكتب رداً...' : 'Bot is typing...'}</span>
               </div>
@@ -268,32 +175,13 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
         </div>
 
         {/* Quick Question Chips */}
-        <div
-          style={{
-            padding: '8px 14px',
-            background: 'var(--bg-surface-elevated, #161622)',
-            borderTop: '1px solid var(--border-default)',
-            display: 'flex',
-            gap: '6px',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap',
-          }}
-        >
+        <div className="ui-chat-chips">
           {quickQuestions.map((q, idx) => (
             <button
               key={idx}
               type="button"
+              className="preset-chip"
               onClick={() => handleSend(q)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '14px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
             >
               {q}
             </button>
@@ -301,51 +189,22 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
         </div>
 
         {/* Input Bar */}
-        <div
-          style={{
-            padding: '12px 16px',
-            background: 'var(--bg-surface-elevated, #1a1a24)',
-            borderTop: '1px solid var(--border-default)',
-            display: 'flex',
-            gap: '8px',
-          }}
-        >
+        <div className="ui-chat-inputbar">
           <input
             type="text"
+            className="ui-chat-input"
             placeholder={locale === 'ar' ? 'اكتب رسالة لتجربة رد الشات بوت...' : 'Type a test message for the AI chatbot...'}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') handleSend();
             }}
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: '24px',
-              border: '1px solid var(--border-default)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              fontSize: '0.88rem',
-            }}
           />
           <button
             type="button"
-            className="btn btn-whatsapp"
+            className="btn btn-whatsapp ui-chat-send"
             onClick={() => handleSend()}
             disabled={!input.trim()}
-            style={{
-              borderRadius: '50%',
-              width: '42px',
-              height: '42px',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--whatsapp-button)',
-              color: '#fff',
-              border: 'none',
-              cursor: 'pointer',
-            }}
           >
             <Send size={16} />
           </button>

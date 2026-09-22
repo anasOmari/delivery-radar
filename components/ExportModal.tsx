@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, X, FileSpreadsheet, Smartphone, Copy, Check, CheckSquare, Users } from 'lucide-react';
+import { Download, FileSpreadsheet, Smartphone, Copy, Check, CheckSquare, Users } from 'lucide-react';
 import { Lead } from '@/lib/types';
 import { exportToCSV, exportToVCF, copyPhonesToClipboard } from '@/lib/exporter';
 import { useLanguage } from '@/lib/LanguageContext';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
 
 interface ExportModalProps {
   leads: Lead[];
@@ -49,111 +51,95 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-md" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-header-icon" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#a855f7' }}>
-              <Download size={18} />
+    <Modal
+      onClose={onClose}
+      size="md"
+      icon={<Download size={18} />}
+      iconTone="brand"
+      title={t('export.title')}
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          {t('action.close')}
+        </Button>
+      }
+    >
+      {/* Target Selection Pills */}
+      <div className="export-target-selector">
+        <label className={`target-option ${exportOption === 'all' ? 'active' : ''}`}>
+          <input
+            type="radio"
+            name="target"
+            hidden
+            checked={exportOption === 'all'}
+            onChange={() => setExportOption('all')}
+          />
+          <Users size={16} className="text-primary" />
+          <div>
+            <strong>{t('export.all')}</strong>
+            <span className="subtext">({leads.length} محل)</span>
+          </div>
+        </label>
+
+        <label className={`target-option ${exportOption === 'selected' ? 'active' : ''} ${selectedIds.length === 0 ? 'disabled' : ''}`}>
+          <input
+            type="radio"
+            name="target"
+            hidden
+            disabled={selectedIds.length === 0}
+            checked={exportOption === 'selected'}
+            onChange={() => setExportOption('selected')}
+          />
+          <CheckSquare size={16} className="text-purple" />
+          <div>
+            <strong>{t('export.selected')}</strong>
+            <span className="subtext">({selectedIds.length} محل)</span>
+          </div>
+        </label>
+      </div>
+
+      {/* Export Action Cards */}
+      <div className="export-cards-grid">
+        <div className="export-action-card" onClick={handleExportCSV}>
+          <div className="flex-align gap-3">
+            <div className="card-icon icon-excel">
+              <FileSpreadsheet size={24} />
             </div>
-            <div>
-              <h3 className="modal-title">{t('export.title')}</h3>
+            <div className="card-info">
+              <h4>{t('export.csv')} (Excel)</h4>
+              <p>{t('export.csv.desc')} بتنسيق UTF-8 المنظم</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose} title={t('action.close')}>
-            <X size={16} />
-          </button>
+          <Button variant="secondary" size="sm">{t('action.download')}</Button>
         </div>
 
-        {/* Body */}
-        <div className="modal-body">
-          {/* Target Selection Pills */}
-          <div className="export-target-selector">
-            <label className={`target-option ${exportOption === 'all' ? 'active' : ''}`}>
-              <input
-                type="radio"
-                name="target"
-                style={{ display: 'none' }}
-                checked={exportOption === 'all'}
-                onChange={() => setExportOption('all')}
-              />
-              <Users size={16} className="text-primary" />
-              <div>
-                <strong>{t('export.all')}</strong>
-                <span className="subtext" style={{ marginRight: '6px' }}>({leads.length} محل)</span>
-              </div>
-            </label>
-
-            <label className={`target-option ${exportOption === 'selected' ? 'active' : ''} ${selectedIds.length === 0 ? 'disabled' : ''}`}>
-              <input
-                type="radio"
-                name="target"
-                style={{ display: 'none' }}
-                disabled={selectedIds.length === 0}
-                checked={exportOption === 'selected'}
-                onChange={() => setExportOption('selected')}
-              />
-              <CheckSquare size={16} className="text-purple" />
-              <div>
-                <strong>{t('export.selected')}</strong>
-                <span className="subtext" style={{ marginRight: '6px' }}>({selectedIds.length} محل)</span>
-              </div>
-            </label>
-          </div>
-
-          {/* Export Action Cards */}
-          <div className="export-cards-grid">
-            <div className="export-action-card" onClick={handleExportCSV}>
-              <div className="flex-align gap-3">
-                <div className="card-icon icon-excel">
-                  <FileSpreadsheet size={24} />
-                </div>
-                <div className="card-info">
-                  <h4>{t('export.csv')} (Excel)</h4>
-                  <p>{t('export.csv.desc')} بتنسيق UTF-8 المنظم</p>
-                </div>
-              </div>
-              <button className="btn btn-secondary btn-sm">{t('action.download')}</button>
+        <div className="export-action-card" onClick={handleExportVCF}>
+          <div className="flex-align gap-3">
+            <div className="card-icon icon-vcf">
+              <Smartphone size={24} />
             </div>
-
-            <div className="export-action-card" onClick={handleExportVCF}>
-              <div className="flex-align gap-3">
-                <div className="card-icon icon-vcf">
-                  <Smartphone size={24} />
-                </div>
-                <div className="card-info">
-                  <h4>{t('export.vcf')} (جهات اتصال الهاتف)</h4>
-                  <p>{t('export.vcf.desc')} للحفظ المباشر في سجل الهاتف</p>
-                </div>
-              </div>
-              <button className="btn btn-secondary btn-sm">{t('action.download')}</button>
-            </div>
-
-            <div className="export-action-card" onClick={handleCopyPhones}>
-              <div className="flex-align gap-3">
-                <div className="card-icon icon-copy">
-                  {copied ? <Check size={24} className="text-success" /> : <Copy size={24} />}
-                </div>
-                <div className="card-info">
-                  <h4>{t('export.copy_phones')}</h4>
-                  <p>{t('export.copy_phones.desc')} مفصولة بأسطر</p>
-                </div>
-              </div>
-              <button className="btn btn-secondary btn-sm">
-                {copied ? t('notify.copied') : 'نسخ الأرقام'}
-              </button>
+            <div className="card-info">
+              <h4>{t('export.vcf')} (جهات اتصال الهاتف)</h4>
+              <p>{t('export.vcf.desc')} للحفظ المباشر في سجل الهاتف</p>
             </div>
           </div>
+          <Button variant="secondary" size="sm">{t('action.download')}</Button>
         </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
-            {t('action.close')}
-          </button>
+        <div className="export-action-card" onClick={handleCopyPhones}>
+          <div className="flex-align gap-3">
+            <div className="card-icon icon-copy">
+              {copied ? <Check size={24} className="text-success" /> : <Copy size={24} />}
+            </div>
+            <div className="card-info">
+              <h4>{t('export.copy_phones')}</h4>
+              <p>{t('export.copy_phones.desc')} مفصولة بأسطر</p>
+            </div>
+          </div>
+          <Button variant="secondary" size="sm">
+            {copied ? t('notify.copied') : 'نسخ الأرقام'}
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Upload, FileSpreadsheet, Check, AlertCircle, Info, FileText } from 'lucide-react';
+import { Upload, FileSpreadsheet, Check, AlertCircle, Info, FileText } from 'lucide-react';
 import { Lead } from '@/lib/types';
 import { calculateOpportunity } from '@/lib/opportunity';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Field, TextArea } from './ui/Field';
+import { Banner } from './ui/StatusPill';
 
 interface ImportModalProps {
   existingLeads: Lead[];
@@ -96,8 +100,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       } else {
         setErrorMsg('لم يتم العثور على أسطر مطابقة للتنسيق المطلوب: الاسم, الهاتف, المدينة, التخصص');
       }
-    } catch (e: any) {
-      setErrorMsg('حدث خطأ في قراءة وتحليل البيانات: ' + e.message);
+    } catch (e: unknown) {
+      setErrorMsg('حدث خطأ في قراءة وتحليل البيانات: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -115,112 +119,89 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-md" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-header-icon">
-              <Upload size={18} />
-            </div>
-            <div>
-              <h3 className="modal-title">استيراد جهات اتصال خارجية</h3>
-            </div>
-          </div>
-          <button className="modal-close-btn" onClick={onClose} title="إغلاق">
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="modal-body">
-          {errorMsg && (
-            <div className="notification-banner banner-error">
-              <div className="flex-align gap-2">
-                <AlertCircle size={16} />
-                <span>{errorMsg}</span>
-              </div>
-              <button className="btn-close" onClick={() => setErrorMsg(null)}>×</button>
-            </div>
-          )}
-
-          {importedCount !== null && importedCount > 0 && (
-            <div className="notification-banner banner-success">
-              <div className="flex-align gap-2">
-                <Check size={16} />
-                <span>
-                  تم استيراد <strong>{importedCount}</strong> جهة اتصال بنجاح!
-                  {duplicatesCount ? ` (تم استبعاد ${duplicatesCount} رقم مكرر)` : ''}
-                </span>
-              </div>
-              <button className="btn-close" onClick={() => setImportedCount(null)}>×</button>
-            </div>
-          )}
-
-          {/* Upload Dropzone */}
-          <div className="import-dropzone">
-            <input
-              type="file"
-              id="csv-file-input"
-              accept=".csv, .txt"
-              style={{ display: 'none' }}
-              onChange={handleFileUpload}
-            />
-            <label htmlFor="csv-file-input" className="dropzone-label">
-              <div className="dropzone-icon-box">
-                <FileSpreadsheet size={32} />
-              </div>
-              <h4 className="dropzone-title">اضغط لاختيار ملف CSV أو اسحبه هنا</h4>
-              <p className="dropzone-sub">يدعم الملفات المصدرة من Excel بترميز UTF-8</p>
-            </label>
-          </div>
-
-          {/* Format Guide */}
-          <div className="import-guide-box">
-            <div className="guide-header">
-              <Info size={14} className="text-primary" />
-              <span>التنسيق المطلوب للأعمدة (مفصولة بفواصل):</span>
-            </div>
-            <code className="guide-code" dir="ltr">
-              الاسم, الهاتف, المدينة, التخصص, الموقع
-            </code>
-            <p className="guide-example">
-              مثال: مطعم الأصالة, 0791234567, عمان, مطاعم, https://example.com
-            </p>
-          </div>
-
-          {/* Direct Paste Area */}
-          <div className="modal-form-group">
-            <label className="modal-label">
-              <FileText size={14} />
-              <span>أو الصق محتوى البيانات النصية مباشرة:</span>
-            </label>
-            <textarea
-              rows={4}
-              className="textarea-field font-mono"
-              placeholder="مطعم الأصالة, 0790000000, الرياض, مطاعم, https://example.com"
-              value={csvText}
-              onChange={e => setCsvText(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+    <Modal
+      onClose={onClose}
+      size="md"
+      icon={<Upload size={18} />}
+      iconTone="brand"
+      title="استيراد جهات اتصال خارجية"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
             إلغاء
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-primary"
+            variant="primary"
+            icon={<Check size={16} />}
             disabled={!csvText.trim()}
             onClick={() => handleProcessCsv(csvText)}
           >
-            <Check size={16} />
-            <span>معالجة واستيراد البيانات</span>
-          </button>
-        </div>
+            معالجة واستيراد البيانات
+          </Button>
+        </>
+      }
+    >
+      {errorMsg && (
+        <Banner tone="red" icon={<AlertCircle size={16} />}>
+          <span className="ui-flex-fill">{errorMsg}</span>
+          <button className="btn-close" onClick={() => setErrorMsg(null)}>×</button>
+        </Banner>
+      )}
+
+      {importedCount !== null && importedCount > 0 && (
+        <Banner tone="green" icon={<Check size={16} />}>
+          <span className="ui-flex-fill">
+            تم استيراد <strong>{importedCount}</strong> جهة اتصال بنجاح!
+            {duplicatesCount ? ` (تم استبعاد ${duplicatesCount} رقم مكرر)` : ''}
+          </span>
+          <button className="btn-close" onClick={() => setImportedCount(null)}>×</button>
+        </Banner>
+      )}
+
+      {/* Upload Dropzone */}
+      <div className="import-dropzone">
+        <input
+          type="file"
+          id="csv-file-input"
+          accept=".csv, .txt"
+          hidden
+          onChange={handleFileUpload}
+        />
+        <label htmlFor="csv-file-input" className="dropzone-label">
+          <div className="dropzone-icon-box">
+            <FileSpreadsheet size={32} />
+          </div>
+          <h4 className="dropzone-title">اضغط لاختيار ملف CSV أو اسحبه هنا</h4>
+          <p className="dropzone-sub">يدعم الملفات المصدرة من Excel بترميز UTF-8</p>
+        </label>
       </div>
-    </div>
+
+      {/* Format Guide */}
+      <div className="import-guide-box">
+        <div className="guide-header">
+          <Info size={14} />
+          <span>التنسيق المطلوب للأعمدة (مفصولة بفواصل):</span>
+        </div>
+        <code className="guide-code" dir="ltr">
+          الاسم, الهاتف, المدينة, التخصص, الموقع
+        </code>
+        <p className="guide-example">
+          مثال: مطعم الأصالة, 0791234567, عمان, مطاعم, https://example.com
+        </p>
+      </div>
+
+      {/* Direct Paste Area */}
+      <Field label="أو الصق محتوى البيانات النصية مباشرة:" icon={<FileText size={14} />} htmlFor="import-csv-text">
+        <TextArea
+          id="import-csv-text"
+          rows={4}
+          className="ui-input-phone"
+          placeholder="مطعم الأصالة, 0790000000, الرياض, مطاعم, https://example.com"
+          value={csvText}
+          onChange={e => setCsvText(e.target.value)}
+        />
+      </Field>
+    </Modal>
   );
 };

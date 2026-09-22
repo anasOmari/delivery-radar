@@ -9,7 +9,6 @@ import {
   MapPin,
   Check,
   AlertTriangle,
-  Loader2,
   CheckCircle2,
   ShieldCheck,
   Copy,
@@ -23,6 +22,7 @@ import { formatPhoneForWhatsApp } from '@/lib/exporter';
 import { normalizeToInternational, phoneValidationError } from '@/lib/phone';
 import { MARKETING_TEMPLATES, applyTemplate } from '@/lib/opportunity';
 import { Lead } from '@/lib/types';
+import { Modal, Button, Banner, Field, TextInput, TextArea } from '@/components/ui';
 
 interface DirectMessageModalProps {
   onClose: () => void;
@@ -251,226 +251,160 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
   const hasApiProvider = config.provider !== 'none';
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-box modal-lg"
-        onClick={e => e.stopPropagation()}
-        style={{ maxWidth: '720px', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
-      >
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-title flex-align gap-2">
-            <div
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                background: 'rgba(37, 211, 102, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--whatsapp-color, #25D366)',
-              }}
-            >
-              <Send size={18} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
-                {locale === 'ar' ? 'إرسال رسالة واتساب لجهة محددة' : 'Send WhatsApp to Specific Contact'}
-              </h3>
-              <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>
-                {locale === 'ar'
-                  ? 'أدخل رقم الهاتف وبيانات المحل لإرسال رسالة العرض تلقائياً'
-                  : 'Enter phone number and details to dispatch your offer'}
-              </p>
-            </div>
-          </div>
-          <button className="btn-close" onClick={onClose}>&times;</button>
-        </div>
+    <Modal
+      size="lg"
+      onClose={onClose}
+      icon={<Send size={18} />}
+      iconTone="whatsapp"
+      title={locale === 'ar' ? 'إرسال رسالة واتساب لجهة محددة' : 'Send WhatsApp to Specific Contact'}
+      subtitle={locale === 'ar'
+        ? 'أدخل رقم الهاتف وبيانات المحل لإرسال رسالة العرض تلقائياً'
+        : 'Enter phone number and details to dispatch your offer'}
+      bodyClassName="ui-stack ui-modal-body--scroll"
+      footer={
+        <>
+          <Button onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
 
-        {/* Body */}
-        <div className="modal-body" style={{ overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
+          <div className="flex-align gap-2">
+            {hasApiProvider && (
+              <Button
+                variant="whatsapp"
+                onClick={handleSendViaAPI}
+                disabled={!recipientPhone.trim() || !!phoneError || isSending || configLoading}
+                loading={isSending}
+                icon={<Send size={16} />}
+              >
+                {isSending
+                  ? (locale === 'ar' ? 'جاري الإرسال عبر Green-API...' : 'Sending via Green-API...')
+                  : (locale === 'ar' ? 'إرسال عبر Green-API' : 'Send via Green-API')}
+              </Button>
+            )}
+
+            <Button
+              onClick={handleOpenWaMe}
+              disabled={!recipientPhone.trim() || !!phoneError}
+              icon={<MessageCircle size={16} />}
+              className={hasApiProvider ? 'btn-dashed' : undefined}
+            >
+              {hasApiProvider ? (locale === 'ar' ? 'wa.me (يدوي)' : 'wa.me (manual)') : t('whatsapp.open')}
+            </Button>
+          </div>
+        </>
+      }
+    >
           {/* Recipient Inputs Grid */}
-          <div
-            style={{
-              background: 'var(--bg-surface-elevated, #1c1c28)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)',
-              padding: '16px',
-            }}
-          >
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <div className="ui-card">
+            <div className="ui-grid-2col">
               {/* Phone Input with validation check button */}
-              <div>
-                <label className="input-label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <Phone size={13} style={{ color: 'var(--whatsapp-color)' }} />
-                  <span>{locale === 'ar' ? 'رقم هاتف المستلم' : 'Recipient Phone'} *</span>
-                </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input
+              <Field
+                icon={<Phone size={13} />}
+                label={<>{locale === 'ar' ? 'رقم هاتف المستلم' : 'Recipient Phone'} *</>}
+              >
+                <div className="flex-align gap-2">
+                  <TextInput
                     type="text"
+                    className="ui-flex-fill ui-input-phone"
                     placeholder="e.g. 0788779463 or 962788779463"
                     value={recipientPhone}
                     onChange={e => {
                       setRecipientPhone(e.target.value);
                       setCheckResult(null);
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '9px 12px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-default)',
-                      background: 'var(--bg-surface)',
-                      color: 'var(--text-primary)',
-                      fontFamily: 'monospace',
-                      fontSize: '0.9rem',
-                    }}
                   />
                   {hasApiProvider && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-xs"
+                    <Button
+                      size="xs"
                       onClick={handleCheckWhatsApp}
                       disabled={isChecking || !recipientPhone.trim()}
                       title={locale === 'ar' ? 'فحص وجود الواتساب' : 'Check WhatsApp'}
-                      style={{ whiteSpace: 'nowrap' }}
+                      loading={isChecking}
+                      icon={<ShieldCheck size={13} />}
                     >
-                      {isChecking ? <Loader2 size={13} className="spin" /> : <ShieldCheck size={13} />}
-                      <span>{locale === 'ar' ? 'فحص' : 'Check'}</span>
-                    </button>
+                      {locale === 'ar' ? 'فحص' : 'Check'}
+                    </Button>
                   )}
                 </div>
                 {checkResult && (
-                  <div
-                    style={{
-                      fontSize: '0.75rem',
-                      marginTop: '4px',
-                      color: checkResult.hasWhatsApp ? 'var(--status-green, #16a34a)' : 'var(--status-red, #dc2626)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {checkResult.hasWhatsApp ? <Check size={12} /> : <AlertTriangle size={12} />}
-                    <span>{checkResult.message}</span>
-                  </div>
+                  <Banner tone={checkResult.hasWhatsApp ? 'green' : 'red'} icon={checkResult.hasWhatsApp ? <Check size={12} /> : <AlertTriangle size={12} />}>
+                    {checkResult.message}
+                  </Banner>
                 )}
                 {recipientPhone.trim() && !phoneError && normalizedPhone && (
-                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--text-tertiary)', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right' }}>
+                  <div className="ui-phone-note">
                     {locale === 'ar' ? 'سيُرسل إلى: +' : 'Will send to: +'}{normalizedPhone}
                   </div>
                 )}
                 {phoneError && recipientPhone.trim() && (
-                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--status-red, #dc2626)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                  <span className="ui-field-error">
                     <AlertTriangle size={12} />
                     <span>{phoneError}</span>
-                  </div>
+                  </span>
                 )}
                 {configLoading && (
-                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'var(--text-tertiary)' }}>
+                  <span className="ui-field-hint">
                     {locale === 'ar' ? 'جاري تحميل إعدادات الإرسال...' : 'Loading sender settings...'}
-                  </div>
+                  </span>
                 )}
-              </div>
+              </Field>
 
               {/* Name Input */}
-              <div>
-                <label className="input-label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <User size={13} />
-                  <span>{locale === 'ar' ? 'اسم المحل / المستلم' : 'Business / Contact Name'}</span>
-                </label>
-                <input
+              <Field
+                icon={<User size={13} />}
+                label={locale === 'ar' ? 'اسم المحل / المستلم' : 'Business / Contact Name'}
+              >
+                <TextInput
                   type="text"
                   placeholder={locale === 'ar' ? 'مثال: مطعم ورد الشام' : 'e.g. Al-Ameed Coffee'}
                   value={recipientName}
                   onChange={e => setRecipientName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-default)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.88rem',
-                  }}
                 />
-              </div>
+              </Field>
 
               {/* City Input */}
-              <div>
-                <label className="input-label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <MapPin size={13} />
-                  <span>{locale === 'ar' ? 'المدينة / المنطقة' : 'City / Region'}</span>
-                </label>
-                <input
+              <Field
+                icon={<MapPin size={13} />}
+                label={locale === 'ar' ? 'المدينة / المنطقة' : 'City / Region'}
+              >
+                <TextInput
                   type="text"
                   placeholder={locale === 'ar' ? 'مثال: عمان - خلدا' : 'e.g. Amman - Khalda'}
                   value={recipientCity}
                   onChange={e => setRecipientCity(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-default)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.88rem',
-                  }}
                 />
-              </div>
+              </Field>
 
               {/* Category Input */}
-              <div>
-                <label className="input-label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <Sparkles size={13} />
-                  <span>{locale === 'ar' ? 'نوع النشاط' : 'Business Category'}</span>
-                </label>
-                <input
+              <Field
+                icon={<Sparkles size={13} />}
+                label={locale === 'ar' ? 'نوع النشاط' : 'Business Category'}
+              >
+                <TextInput
                   type="text"
                   placeholder={locale === 'ar' ? 'مثال: حلويات ومأكولات' : 'e.g. Sweets & Cafe'}
                   value={recipientCategory}
                   onChange={e => setRecipientCategory(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-default)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.88rem',
-                  }}
                 />
-              </div>
+              </Field>
             </div>
           </div>
 
           {/* Preset Templates Selector */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Layers size={13} style={{ color: 'var(--whatsapp-color)' }} />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <div className="flex-align gap-2 ui-mb-2">
+              <Layers size={13} />
+              <span className="subtext">
                 {locale === 'ar' ? 'اختر نموذج الرسالة:' : 'Choose Message Template:'}
               </span>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <div className="template-chips">
               {MARKETING_TEMPLATES.map(tmpl => (
                 <button
                   key={tmpl.id}
                   type="button"
+                  className={`preset-chip ${selectedTemplateId === tmpl.id ? 'chip-active' : ''}`}
                   onClick={() => handleSelectTemplate(tmpl.id)}
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '16px',
-                    background: selectedTemplateId === tmpl.id ? 'rgba(37, 211, 102, 0.15)' : 'var(--bg-surface-elevated)',
-                    border: `1px solid ${selectedTemplateId === tmpl.id ? 'var(--whatsapp-color)' : 'var(--border-default)'}`,
-                    color: selectedTemplateId === tmpl.id ? 'var(--whatsapp-color)' : 'var(--text-secondary)',
-                    fontSize: '0.78rem',
-                    fontWeight: selectedTemplateId === tmpl.id ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
                 >
                   {tmpl.title}
                 </button>
@@ -480,98 +414,27 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose,
 
           {/* Message Textarea */}
           <div>
-            <div className="flex-between" style={{ marginBottom: '6px' }}>
-              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <div className="flex-between ui-mb-2">
+              <label className="ui-field-label">
                 {locale === 'ar' ? 'نص الرسالة المرسلة:' : 'Message Content:'}
               </label>
-              <button type="button" className="btn btn-secondary btn-xs" onClick={handleCopy}>
-                {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
-                <span>{copied ? t('notify.copied') : t('whatsapp.copy')}</span>
-              </button>
+              <Button size="xs" onClick={handleCopy} icon={copied ? <Check size={12} /> : <Copy size={12} />}>
+                {copied ? t('notify.copied') : t('whatsapp.copy')}
+              </Button>
             </div>
-            <textarea
-              className="textarea-field"
+            <TextArea
               rows={7}
               value={messageText}
               onChange={e => setMessageText(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-default)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                fontSize: '0.86rem',
-                lineHeight: 1.6,
-              }}
             />
           </div>
 
           {/* Send Status Banner */}
           {sendResult && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: sendResult.success ? 'var(--status-green-bg, rgba(34, 197, 94, 0.12))' : 'var(--status-red-bg, rgba(239, 68, 68, 0.1))',
-                border: `1px solid ${sendResult.success ? 'var(--status-green-border, #16a34a)' : 'var(--status-red-border, #dc2626)'}`,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: sendResult.success ? 'var(--status-green, #16a34a)' : 'var(--status-red, #dc2626)',
-              }}
-            >
-              {sendResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-              <span>{sendResult.message}</span>
-            </div>
+            <Banner tone={sendResult.success ? 'green' : 'red'} icon={sendResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}>
+              {sendResult.message}
+            </Banner>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="modal-footer flex-between" style={{ padding: '14px 20px', borderTop: '1px solid var(--border-default)' }}>
-          <button className="btn btn-secondary" onClick={onClose}>
-            {t('action.cancel')}
-          </button>
-
-          <div className="flex-align gap-2">
-            {hasApiProvider && (
-              <button
-                className="btn btn-whatsapp"
-                onClick={handleSendViaAPI}
-                disabled={!recipientPhone.trim() || !!phoneError || isSending || configLoading}
-                style={{
-                  background: 'var(--whatsapp-button)',
-                  color: '#fff',
-                  borderColor: 'var(--whatsapp-button)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 700,
-                }}
-              >
-                {isSending ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
-                <span>
-                  {isSending
-                    ? (locale === 'ar' ? 'جاري الإرسال عبر Green-API...' : 'Sending via Green-API...')
-                    : (locale === 'ar' ? 'إرسال عبر Green-API' : 'Send via Green-API')}
-                </span>
-              </button>
-            )}
-
-            <button
-              className="btn btn-secondary"
-              onClick={handleOpenWaMe}
-              disabled={!recipientPhone.trim() || !!phoneError}
-              style={hasApiProvider ? { border: '1px dashed var(--border-default)' } : {}}
-            >
-              <MessageCircle size={16} />
-              <span>{hasApiProvider ? (locale === 'ar' ? 'wa.me (يدوي)' : 'wa.me (manual)') : t('whatsapp.open')}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

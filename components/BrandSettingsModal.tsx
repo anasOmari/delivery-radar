@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BadgeCheck, X } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useBranding, DEFAULT_APP_NAME } from '@/lib/BrandingContext';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Field, TextInput } from './ui/Field';
+import { Banner } from './ui/StatusPill';
 
 interface BrandSettingsModalProps {
   onClose: () => void;
@@ -39,69 +43,50 @@ export const BrandSettingsModal: React.FC<BrandSettingsModalProps> = ({ onClose,
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box modal-sm" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title">
-            <span className="modal-header-icon">
-              <BadgeCheck size={19} />
-            </span>
-            <div>
-              <h3>{ar ? 'اسم النظام' : 'System Name'}</h3>
-              <p className="subtext">{ar ? 'يظهر في الترويسة وشاشات الدخول' : 'Shown in the header and auth screens'}</p>
-            </div>
-          </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="close">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="modal-body">
-          {notice && (
-            <div className={`notification-banner banner-${notice.type}`} style={{ marginBottom: 0 }}>
-              <span>{notice.message}</span>
-            </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="brand-name">
-              {ar ? 'اسم النظام' : 'System name'}
-            </label>
-            <input
-              id="brand-name"
-              className="input-field"
-              type="text"
-              maxLength={80}
-              placeholder={DEFAULT_APP_NAME}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="brand-tagline">
-              {ar ? 'السطر التعريفي (اختياري)' : 'Tagline (optional)'}
-            </label>
-            <input
-              id="brand-tagline"
-              className="input-field"
-              type="text"
-              maxLength={160}
-              value={sub}
-              onChange={(e) => setSub(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} type="button">
+    <Modal
+      onClose={onClose}
+      size="sm"
+      icon={<BadgeCheck size={19} />}
+      iconTone="brand"
+      title={ar ? 'اسم النظام' : 'System Name'}
+      subtitle={ar ? 'يظهر في الترويسة وشاشات الدخول' : 'Shown in the header and auth screens'}
+      footer={
+        <>
+          <Button onClick={onClose} type="button" variant="secondary">
             {ar ? 'إلغاء' : 'Cancel'}
-          </button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving} type="button">
+          </Button>
+          <Button onClick={handleSave} disabled={saving} loading={saving} type="button" variant="primary">
             {saving ? (ar ? 'جاري الحفظ...' : 'Saving...') : ar ? 'حفظ' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    >
+      {notice && (
+        <Banner tone={notice.type === 'success' ? 'green' : 'red'}>
+          {notice.message}
+        </Banner>
+      )}
+
+      <Field label={ar ? 'اسم النظام' : 'System name'} htmlFor="brand-name">
+        <TextInput
+          id="brand-name"
+          type="text"
+          maxLength={80}
+          placeholder={DEFAULT_APP_NAME}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </Field>
+
+      <Field label={ar ? 'السطر التعريفي (اختياري)' : 'Tagline (optional)'} htmlFor="brand-tagline">
+        <TextInput
+          id="brand-tagline"
+          type="text"
+          maxLength={160}
+          value={sub}
+          onChange={(e) => setSub(e.target.value)}
+        />
+      </Field>
+    </Modal>
   );
 };

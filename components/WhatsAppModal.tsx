@@ -14,7 +14,6 @@ import {
   Settings,
   CheckCircle,
   AlertTriangle,
-  Loader2,
   FileText,
   Zap,
 } from 'lucide-react';
@@ -24,6 +23,7 @@ import { MARKETING_TEMPLATES, DRIP_SEQUENCES, applyTemplate } from '@/lib/opport
 import { useLanguage } from '@/lib/LanguageContext';
 import { getWhatsAppConfig, DEFAULT_AUTO_MESSAGE_TEMPLATE, WhatsAppConfig } from '@/lib/whatsappProviders';
 import { normalizeToInternational, isValidPhone } from '@/lib/phone';
+import { Modal, Button, Banner, StatusPill } from '@/components/ui';
 import { WhatsAppSettingsModal } from './WhatsAppSettingsModal';
 
 interface WhatsAppModalProps {
@@ -269,41 +269,95 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-lg" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-header-icon" style={{ background: 'rgba(37, 211, 102, 0.12)', color: 'var(--whatsapp-color, #25D366)' }}>
-              <MessageCircle size={18} />
+    <Modal
+      size="lg"
+      onClose={onClose}
+      icon={<MessageCircle size={18} />}
+      iconTone="whatsapp"
+      title={isCampaignMode
+        ? `${t('whatsapp.campaign.mode')} (${currentIndex + 1} ${t('whatsapp.campaign.of')} ${campaignLeads.length})`
+        : t('whatsapp.title')}
+      subtitle={`${activeLead.name} - ${activeLead.city} (${activeLead.phone || (t('common.phone') + ': --')})`}
+      headerActions={
+        <Button
+          size="sm"
+          icon={<Settings size={15} />}
+          onClick={() => setShowSettings(true)}
+          title={t('whatsapp.api.settings')}
+        >
+          {t('header.messages.settings')}
+        </Button>
+      }
+      footer={
+        <>
+          {isCampaignMode ? (
+            <div className="flex-align gap-2">
+              <Button
+                size="sm"
+                disabled={currentIndex === 0}
+                onClick={() => {
+                  const prev = currentIndex - 1;
+                  setCurrentIndex(prev);
+                  const prevLead = campaignLeads[prev];
+                  const autoTemplate = config.autoMessageTemplate || DEFAULT_AUTO_MESSAGE_TEMPLATE;
+                  setCustomMessage(applyTemplate(autoTemplate, prevLead));
+                }}
+              >
+                {t('action.previous')}
+              </Button>
+              <span className="text-sm subtext">{currentIndex + 1} / {campaignLeads.length}</span>
             </div>
-            <div>
-              <h3 className="modal-title">
-                {isCampaignMode
-                  ? `${t('whatsapp.campaign.mode')} (${currentIndex + 1} ${t('whatsapp.campaign.of')} ${campaignLeads.length})`
-                  : t('whatsapp.title')}
-              </h3>
-              <p className="modal-subtitle">
-                {activeLead.name} - {activeLead.city} ({activeLead.phone || (t('common.phone') + ': --')})
-              </p>
-            </div>
-          </div>
-          <div className="flex-align gap-2">
-            <button
-              className="btn btn-secondary btn-icon"
-              onClick={() => setShowSettings(true)}
-              title={t('whatsapp.api.settings')}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px' }}
-            >
-              <Settings size={15} />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{t('header.messages.settings')}</span>
-            </button>
-            <button className="modal-close-btn" onClick={onClose} title={t('action.close')}>
-              <X size={16} />
-            </button>
-          </div>
-        </div>
+          ) : (
+            <Button onClick={onClose}>
+              {t('action.cancel')}
+            </Button>
+          )}
 
-        <div className="modal-body">
+          <div className="flex-align gap-2">
+            {isCampaignMode && hasApiProvider && (
+              <Button
+                variant="whatsapp"
+                onClick={handleBulkSend}
+                disabled={bulkSending || campaignLeads.length === 0}
+                title={locale === 'ar' ? 'إرسال تلقائي واحد لكل جهات الحملة' : 'One-click auto-send to the whole campaign'}
+                loading={bulkSending}
+                icon={<Zap size={16} />}
+              >
+                {bulkSending
+                  ? (locale === 'ar' ? 'جاري الإرسال للكل...' : 'Sending to all...')
+                  : (locale === 'ar' ? `إرسال تلقائي للكل 🚀 (${campaignLeads.length})` : `Auto-send to all 🚀 (${campaignLeads.length})`)}
+              </Button>
+            )}
+            {hasApiProvider && (
+              <Button
+                variant="whatsapp"
+                onClick={handleSendViaAPI}
+                disabled={!activeLead.phone || sendStatus === 'sending' || sendStatus === 'sent' || bulkSending}
+                loading={sendStatus === 'sending'}
+                icon={<Send size={16} />}
+              >
+                {sendStatus === 'sending'
+                  ? (locale === 'ar' ? 'جاري الإرسال عبر Green-API...' : 'Sending via Green-API...')
+                  : isCampaignMode && currentIndex < campaignLeads.length - 1
+                    ? t('whatsapp.campaign.send')
+                    : (locale === 'ar' ? `إرسال عبر ${getProviderDisplayName()}` : `Send via ${getProviderDisplayName()}`)}
+              </Button>
+            )}
+
+            <Button
+              onClick={handleOpenWhatsApp}
+              disabled={!activeLead.phone || bulkSending}
+              icon={<MessageCircle size={16} />}
+              className={hasApiProvider ? 'btn-dashed' : undefined}
+            >
+              {hasApiProvider
+                ? (locale === 'ar' ? 'wa.me (يدوي)' : 'wa.me (manual)')
+                : t('whatsapp.open')}
+            </Button>
+          </div>
+        </>
+      }
+    >
           {activeLead.opportunityReason && (
             <div className="opportunity-banner">
               <Sparkles size={16} />
@@ -315,163 +369,95 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
 
           {/* API Status Indicator */}
           {hasApiProvider && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--status-green-bg, rgba(34, 197, 94, 0.1))',
-                border: '1px solid var(--status-green-border, rgba(34, 197, 94, 0.3))',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--status-green, #16a34a)',
-              }}
-            >
-              <div className="flex-align gap-2">
-                <CheckCircle size={15} />
-                <span>
-                  {getProviderDisplayName()} • {locale === 'ar' ? 'البوابة جاهزة للإرسال الآلي' : 'Ready for auto-messaging'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSettings(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'inherit',
-                  textDecoration: 'underline',
-                  fontSize: '0.76rem',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                }}
-              >
+            <Banner tone="green" icon={<CheckCircle size={15} />}>
+              <span>
+                {getProviderDisplayName()} • {locale === 'ar' ? 'البوابة جاهزة للإرسال الآلي' : 'Ready for auto-messaging'}
+              </span>
+              <Button variant="ghost" size="xs" onClick={() => setShowSettings(true)}>
                 {locale === 'ar' ? 'تعديل الإعدادات' : 'Configure'}
-              </button>
-            </div>
+              </Button>
+            </Banner>
           )}
 
           {/* Send Status Feedback */}
           {sendStatus === 'sent' && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--status-green-bg, rgba(34, 197, 94, 0.12))',
-                border: '1px solid var(--status-green-border, #16a34a)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: 'var(--status-green, #16a34a)',
-              }}
-            >
-              <CheckCircle size={16} />
-              <span>{locale === 'ar' ? 'تم إرسال الرسالة بنجاح عبر Green-API!' : 'Message sent successfully via Green-API!'}</span>
-            </div>
+            <Banner tone="green" icon={<CheckCircle size={16} />}>
+              {locale === 'ar' ? 'تم إرسال الرسالة بنجاح عبر Green-API!' : 'Message sent successfully via Green-API!'}
+            </Banner>
           )}
 
           {sendStatus === 'failed' && sendError && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--status-red-bg, rgba(239, 68, 68, 0.1))',
-                border: '1px solid var(--status-red-border, #dc2626)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: 'var(--status-red, #dc2626)',
-              }}
-            >
-              <AlertTriangle size={16} />
-              <span>{sendError}</span>
-            </div>
+            <Banner tone="red" icon={<AlertTriangle size={16} />}>
+              {sendError}
+            </Banner>
           )}
 
           {/* Bulk auto-send progress / report (campaign mode) */}
           {isCampaignMode && hasApiProvider && bulkProgress && (
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(37, 211, 102, 0.06)',
-                border: '1px solid rgba(37, 211, 102, 0.35)',
-                fontSize: '0.82rem',
-              }}
-            >
-              <div className="flex-between" style={{ marginBottom: '8px' }}>
-                <strong style={{ color: 'var(--text-primary)' }}>
-                  {bulkSending
-                    ? (locale === 'ar' ? `🚀 جاري الإرسال التلقائي... (${bulkProgress.done}/${bulkProgress.total})` : `🚀 Auto-sending... (${bulkProgress.done}/${bulkProgress.total})`)
-                    : (locale === 'ar' ? `📊 نتيجة الإرسال التلقائي (${bulkProgress.done}/${bulkProgress.total})` : `📊 Bulk send report (${bulkProgress.done}/${bulkProgress.total})`)}
-                </strong>
-                {bulkSending && (
-                  <button type="button" className="btn btn-secondary btn-xs" onClick={() => { bulkCancelRef.current = true; }}>
-                    <X size={12} />
-                    <span>{locale === 'ar' ? 'إيقاف' : 'Stop'}</span>
-                  </button>
-                )}
-              </div>
-              <div style={{ height: '8px', borderRadius: '4px', background: 'var(--bg-surface)', overflow: 'hidden', marginBottom: '8px' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${bulkProgress.total ? Math.round((bulkProgress.done / bulkProgress.total) * 100) : 0}%`,
-                    background: '#25D366',
-                    transition: 'width 0.3s',
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontWeight: 700 }}>
-                <span style={{ color: 'var(--status-green, #16a34a)' }}>✅ {bulkProgress.sent} {locale === 'ar' ? 'تم' : 'sent'}</span>
-                <span style={{ color: 'var(--status-red, #dc2626)' }}>❌ {bulkProgress.failed} {locale === 'ar' ? 'فشل' : 'failed'}</span>
-                <span style={{ color: 'var(--text-tertiary)' }}>⏭️ {bulkProgress.skipped} {locale === 'ar' ? 'تُخطي' : 'skipped'}</span>
-              </div>
-              {bulkReport && !bulkSending && (
-                <div style={{ marginTop: '8px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  <div>
-                    {bulkReport.cancelled
-                      ? (locale === 'ar' ? '⏹️ تم إيقاف الإرسال يدوياً.' : '⏹️ Sending stopped manually.')
-                      : (locale === 'ar'
-                        ? `انتهى الإرسال: ${bulkReport.sent} ناجح، ${bulkReport.failed} فاشل، ${bulkReport.skipped} متخطى من أصل ${bulkReport.total}.`
-                        : `Finished: ${bulkReport.sent} sent, ${bulkReport.failed} failed, ${bulkReport.skipped} skipped of ${bulkReport.total}.`)}
-                  </div>
-                  {bulkReport.errors.length > 0 && (
-                    <div style={{ marginTop: '4px', fontSize: '0.76rem' }}>
-                      {bulkReport.errors.map((e, idx) => <div key={idx}>• {e}</div>)}
-                    </div>
+            <Banner tone="whatsapp">
+              <div className="ui-flex-fill">
+                <div className="flex-between ui-mb-2">
+                  <strong>
+                    {bulkSending
+                      ? (locale === 'ar' ? `🚀 جاري الإرسال التلقائي... (${bulkProgress.done}/${bulkProgress.total})` : `🚀 Auto-sending... (${bulkProgress.done}/${bulkProgress.total})`)
+                      : (locale === 'ar' ? `📊 نتيجة الإرسال التلقائي (${bulkProgress.done}/${bulkProgress.total})` : `📊 Bulk send report (${bulkProgress.done}/${bulkProgress.total})`)}
+                  </strong>
+                  {bulkSending && (
+                    <Button size="xs" icon={<X size={12} />} onClick={() => { bulkCancelRef.current = true; }}>
+                      {locale === 'ar' ? 'إيقاف' : 'Stop'}
+                    </Button>
                   )}
                 </div>
-              )}
-            </div>
+                <div className="ui-progress-track">
+                  <div
+                    className="ui-progress-fill"
+                    style={{ width: `${bulkProgress.total ? Math.round((bulkProgress.done / bulkProgress.total) * 100) : 0}%` }}
+                  />
+                </div>
+                <div className="ui-row-counts">
+                  <StatusPill tone="green">✅ {bulkProgress.sent} {locale === 'ar' ? 'تم' : 'sent'}</StatusPill>
+                  <StatusPill tone="red">❌ {bulkProgress.failed} {locale === 'ar' ? 'فشل' : 'failed'}</StatusPill>
+                  <span className="subtext">⏭️ {bulkProgress.skipped} {locale === 'ar' ? 'تُخطي' : 'skipped'}</span>
+                </div>
+                {bulkReport && !bulkSending && (
+                  <div className="ui-report">
+                    <div>
+                      {bulkReport.cancelled
+                        ? (locale === 'ar' ? '⏹️ تم إيقاف الإرسال يدوياً.' : '⏹️ Sending stopped manually.')
+                        : (locale === 'ar'
+                          ? `انتهى الإرسال: ${bulkReport.sent} ناجح، ${bulkReport.failed} فاشل، ${bulkReport.skipped} متخطى من أصل ${bulkReport.total}.`
+                          : `Finished: ${bulkReport.sent} sent, ${bulkReport.failed} failed, ${bulkReport.skipped} skipped of ${bulkReport.total}.`)}
+                    </div>
+                    {bulkReport.errors.length > 0 && (
+                      <div className="subtext">
+                        {bulkReport.errors.map((e, idx) => <div key={idx}>• {e}</div>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Banner>
           )}
 
           {/* Skip non-WhatsApp numbers option (campaign bulk mode) */}
           {isCampaignMode && hasApiProvider && !bulkSending && !bulkReport && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <label className="ui-check-row">
               <input
                 type="checkbox"
+                className="ui-checkbox"
                 checked={skipNoWhatsApp}
                 onChange={e => setSkipNoWhatsApp(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
               <span>{locale === 'ar' ? 'تخطي الأرقام المسجلة بدون واتساب (أرضي/غير صالح) أثناء الإرسال التلقائي' : 'Skip non-WhatsApp numbers during auto-send'}</span>
             </label>
           )}
 
           {/* Template Selection Tabs */}
-          <div className="whatsapp-tab-group" style={{ display: 'flex', gap: '6px' }}>
+          <div className="whatsapp-tab-group">
             <button
               type="button"
               className={`whatsapp-tab-btn ${activeTab === 'admin_auto' ? 'active' : ''}`}
               onClick={handleSelectAdminAuto}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <FileText size={14} />
               <span>{locale === 'ar' ? 'رسالة الإعدادات المعتمدة ⭐' : 'Admin Template ⭐'}</span>
@@ -483,7 +469,6 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
                 setActiveTab('templates');
                 handleSelectTemplate(selectedTemplateId);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Layers size={14} />
               <span>{t('whatsapp.templates')}</span>
@@ -495,7 +480,6 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
                 setActiveTab('drip');
                 handleSelectDrip(selectedDripStep);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Repeat size={14} />
               <span>{t('whatsapp.drip')}</span>
@@ -550,117 +534,17 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
               <label className="modal-label">
                 <span>{t('whatsapp.message')}:</span>
               </label>
-              <button type="button" className="btn btn-secondary btn-xs" onClick={handleCopy}>
-                {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                <span>{copied ? t('notify.copied') : t('whatsapp.copy')}</span>
-              </button>
+              <Button size="xs" onClick={handleCopy} icon={copied ? <Check size={13} /> : <Copy size={13} />}>
+                {copied ? t('notify.copied') : t('whatsapp.copy')}
+              </Button>
             </div>
             <textarea
               className="textarea-field font-regular"
               rows={6}
               value={customMessage}
               onChange={e => setCustomMessage(e.target.value)}
-              style={{ lineHeight: 1.6 }}
             />
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="modal-footer flex-between">
-          {isCampaignMode ? (
-            <div className="flex-align gap-2">
-              <button
-                className="btn btn-secondary btn-sm"
-                disabled={currentIndex === 0}
-                onClick={() => {
-                  const prev = currentIndex - 1;
-                  setCurrentIndex(prev);
-                  const prevLead = campaignLeads[prev];
-                  const autoTemplate = config.autoMessageTemplate || DEFAULT_AUTO_MESSAGE_TEMPLATE;
-                  setCustomMessage(applyTemplate(autoTemplate, prevLead));
-                }}
-              >
-                <span>{t('action.previous')}</span>
-              </button>
-              <span className="text-sm subtext">{currentIndex + 1} / {campaignLeads.length}</span>
-            </div>
-          ) : (
-            <button className="btn btn-secondary" onClick={onClose}>
-              {t('action.cancel')}
-            </button>
-          )}
-
-          <div className="flex-align gap-2">
-            {isCampaignMode && hasApiProvider && (
-              <button
-                className="btn btn-whatsapp"
-                onClick={handleBulkSend}
-                disabled={bulkSending || campaignLeads.length === 0}
-                title={locale === 'ar' ? 'إرسال تلقائي واحد لكل جهات الحملة' : 'One-click auto-send to the whole campaign'}
-                style={{
-                  background: '#128C7E',
-                  color: '#fff',
-                  borderColor: '#128C7E',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 700,
-                }}
-              >
-                {bulkSending ? <Loader2 size={16} className="spin" /> : <Zap size={16} />}
-                <span>
-                  {bulkSending
-                    ? (locale === 'ar' ? 'جاري الإرسال للكل...' : 'Sending to all...')
-                    : (locale === 'ar' ? `إرسال تلقائي للكل 🚀 (${campaignLeads.length})` : `Auto-send to all 🚀 (${campaignLeads.length})`)}
-                </span>
-              </button>
-            )}
-            {hasApiProvider && (
-              <button
-                className="btn btn-whatsapp"
-                onClick={handleSendViaAPI}
-                disabled={!activeLead.phone || sendStatus === 'sending' || sendStatus === 'sent' || bulkSending}
-                style={{
-                  background: '#25D366',
-                  color: '#fff',
-                  borderColor: '#25D366',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 700,
-                }}
-              >
-                {sendStatus === 'sending' ? (
-                  <Loader2 size={16} className="spin" />
-                ) : (
-                  <Send size={16} />
-                )}
-                <span>
-                  {sendStatus === 'sending'
-                    ? (locale === 'ar' ? 'جاري الإرسال عبر Green-API...' : 'Sending via Green-API...')
-                    : isCampaignMode && currentIndex < campaignLeads.length - 1
-                      ? t('whatsapp.campaign.send')
-                      : (locale === 'ar' ? `إرسال عبر ${getProviderDisplayName()}` : `Send via ${getProviderDisplayName()}`)}
-                </span>
-              </button>
-            )}
-
-            <button
-              className="btn btn-secondary"
-              onClick={handleOpenWhatsApp}
-              disabled={!activeLead.phone || bulkSending}
-              style={hasApiProvider ? { border: '1px dashed var(--border-default)' } : {}}
-            >
-              <MessageCircle size={16} />
-              <span>
-                {hasApiProvider
-                  ? (locale === 'ar' ? 'wa.me (يدوي)' : 'wa.me (manual)')
-                  : t('whatsapp.open')}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
