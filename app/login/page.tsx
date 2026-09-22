@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { Button, Field, TextInput, Banner } from '@/components/ui';
 import { OAuthButtons } from '@/components/OAuthButtons';
 import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -50,16 +51,12 @@ export default function LoginPage() {
       }
     >
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
-        {error && <div className="notification-banner banner-error" style={{ marginBottom: 0 }}><span>{error}</span></div>}
+        {error && <Banner tone="red"><span role="alert">{error}</span></Banner>}
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="login-email">
-            <Mail size={14} />
-            {ar ? 'البريد الإلكتروني' : 'Email'}
-          </label>
-          <input
+        <Field label={ar ? 'البريد الإلكتروني' : 'Email'} icon={<Mail size={14} />} htmlFor="login-email">
+          <TextInput
             id="login-email"
-            className="input-field auth-input-ltr"
+            className="auth-input-ltr"
             type="email"
             inputMode="email"
             autoComplete="username"
@@ -68,17 +65,13 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="login-password">
-            <Lock size={14} />
-            {ar ? 'كلمة المرور' : 'Password'}
-          </label>
+        <Field label={ar ? 'كلمة المرور' : 'Password'} icon={<Lock size={14} />} htmlFor="login-password">
           <div className="auth-password-wrap">
-            <input
+            <TextInput
               id="login-password"
-              className="input-field auth-input-ltr"
+              className="auth-input-ltr"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               dir="ltr"
@@ -95,21 +88,18 @@ export default function LoginPage() {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-        </div>
+        </Field>
 
-        <button className="btn btn-search auth-submit" type="submit" disabled={submitting || loading}>
+        <Button type="submit" variant="primary" className="btn-search auth-submit" loading={submitting} disabled={submitting || loading}>
           {submitting ? (
-            <>
-              <Loader2 size={17} className="spin" />
-              {ar ? 'جاري الدخول...' : 'Signing in...'}
-            </>
+            <>{ar ? 'جاري الدخول...' : 'Signing in...'}</>
           ) : (
             <>
               {ar ? 'دخول' : 'Log in'}
               {ar ? <ArrowLeft size={17} /> : <ArrowRight size={17} />}
             </>
           )}
-        </button>
+        </Button>
       </form>
       <OAuthButtons onError={setError} />
     </AuthShell>

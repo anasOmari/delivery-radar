@@ -1,12 +1,15 @@
-const { Pool } = require('pg') as { Pool: new (config: Record<string, unknown>) => BotDatabase };
+import { Pool } from 'pg';
 interface BotDatabase { query(sql: string, params?: unknown[]): Promise<{ rowCount: number | null; rows: Array<Record<string, unknown>> }> };
 import type { ChatMessage } from './chatbotConfig';
 import type { BookingDetails } from './orderBooking';
 
+type PoolFactory = new (config: Record<string, unknown>) => BotDatabase;
+const PoolTyped = Pool as unknown as PoolFactory;
+
 let pool: BotDatabase | null = null;
 function db(): BotDatabase {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for bot order storage');
-  if (!pool) pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3, ssl: { rejectUnauthorized: false } });
+  if (!pool) pool = new PoolTyped({ connectionString: process.env.DATABASE_URL, max: 3, ssl: { rejectUnauthorized: false } });
   return pool;
 }
 

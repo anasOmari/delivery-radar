@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Filter, RefreshCw, Layers, Globe2, Database, ShieldCheck } from 'lucide-react';
 import { SearchParams } from '@/lib/types';
+import { Button, Field, TextInput } from '@/components/ui';
 import { useLanguage } from '@/lib/LanguageContext';
 import { COUNTRIES, COUNTRY_CITIES, COUNTRY_CITIES_AR } from '@/lib/i18n';
 
@@ -111,57 +112,49 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
   };
 
   return (
-    <section className="search-card" aria-labelledby="search-title">
+    <section className="search-card ui-card" aria-labelledby="search-title">
       <h2 id="search-title" className="section-title">{locale === 'ar' ? 'البحث عن عملاء' : 'Find leads'}</h2>
       <form onSubmit={handleSubmit} className="search-form">
         <div className="input-group flex-2">
-          <label className="input-label" htmlFor="search-category">
-            <Search size={15} />
-            <span>{t('search.category.label')}</span>
-          </label>
-          <input id="search-category"
-            type="text"
-            className="input-field"
-            placeholder={t('search.category.placeholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <Field label={t('search.category.label')} icon={<Search size={15} />} htmlFor="search-category">
+            <TextInput id="search-category"
+              type="text"
+              placeholder={t('search.category.placeholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </Field>
         </div>
 
         <div className="input-group flex-1">
-          <label className="input-label" htmlFor="search-country">
-            <Globe2 size={15} />
-            <span>{t('search.country.label')}</span>
-          </label>
-          <select id="search-country"
-            className="input-field select-field"
-            value={country}
-            onChange={(e) => handleCountryChange(e.target.value)}
-          >
-            {countries.map((c) => (
-              <option key={c.code} value={c.code}>{c.name}</option>
-            ))}
-          </select>
+          <Field label={t('search.country.label')} icon={<Globe2 size={15} />} htmlFor="search-country">
+            <select id="search-country"
+              className="input-field select-field"
+              value={country}
+              onChange={(e) => handleCountryChange(e.target.value)}
+            >
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
         </div>
 
         <div className="input-group flex-1">
-          <label className="input-label" htmlFor="search-city">
-            <MapPin size={15} />
-            <span>{t('search.city.label')}</span>
-          </label>
-          <input id="search-city"
-            type="text"
-            className="input-field"
-            list="cities-suggestions"
-            placeholder={t('search.city.placeholder')}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          />
-          <datalist id="cities-suggestions">
-            {currentSuggestedCities.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
+          <Field label={t('search.city.label')} icon={<MapPin size={15} />} htmlFor="search-city">
+            <TextInput id="search-city"
+              type="text"
+              list="cities-suggestions"
+              placeholder={t('search.city.placeholder')}
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            <datalist id="cities-suggestions">
+              {currentSuggestedCities.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </Field>
         </div>
 
         <div className="input-group">
@@ -179,19 +172,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
           </label>
         </div>
 
-        <button type="submit" className="btn btn-search" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <RefreshCw className="spin" size={16} />
-              <span>{t('search.loading')}</span>
-            </>
-          ) : (
-            <>
-              <Search size={16} />
-              <span>{t('search.submit')}</span>
-            </>
-          )}
-        </button>
+        <Button type="submit" variant="whatsapp" className="btn-search" disabled={isLoading} icon={isLoading ? <RefreshCw className="spin" size={16} /> : <Search size={16} />}>
+          <span>{isLoading ? t('search.loading') : t('search.submit')}</span>
+        </Button>
       </form>
 
       <details className="search-options disclosure">
@@ -225,7 +208,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
               checked={skipDuplicates}
               onChange={(e) => setSkipDuplicates(e.target.checked)}
             />
-            <ShieldCheck size={14} color="#10b981" />
+            <ShieldCheck size={14} color="var(--status-green)" />
             <span>{locale === 'ar' ? 'استبعاد السجلات المحفوظة' : 'Skip saved leads'}</span>
           </label>
         </div>
@@ -254,7 +237,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, vault
       </details>
       <details className="search-presets disclosure">
         <summary>{locale === 'ar' ? 'المناطق والأنشطة المقترحة' : 'Suggested regions and categories'}</summary>
-      <div className="presets-container" style={{ marginTop: '12px' }}>
+      <div className="presets-container">
         <span className="presets-title">
           <MapPin size={13} />
           <span>{t('search.regions')} {countries.find(c => c.code === country)?.name}:</span>

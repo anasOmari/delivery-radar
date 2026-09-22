@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Lead, ValidationState, LinkStatus } from '@/lib/types';
-import { getWhatsAppConfig, WhatsAppConfig } from '@/lib/whatsappProviders';
+import { Lead, ValidationState } from '@/lib/types';
+import { getWhatsAppConfig } from '@/lib/whatsappProviders';
 
 export function useValidation() {
   const [validating, setValidating] = useState(false);

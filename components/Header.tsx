@@ -139,17 +139,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-secondary"
           onClick={onOpenChatbotModal}
-          style={{
-            borderColor: 'rgba(37, 211, 102, 0.4)',
-            background: 'rgba(37, 211, 102, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-primary)',
-          }}
           title={locale === 'ar' ? 'تجربة الردود التلقائية' : 'Test auto-replies'}
         >
-          <Bot size={16} style={{ color: 'var(--whatsapp-color)' }} />
+          <Bot size={16} className="text-whatsapp" />
           <span>{locale === 'ar' ? 'الردود التلقائية' : 'Auto-replies'}</span>
         </button>
 
@@ -157,15 +149,6 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-whatsapp"
           onClick={onOpenDirectMessageModal}
-          style={{
-            background: 'var(--whatsapp-button)',
-            color: '#fff',
-            borderColor: 'var(--whatsapp-button)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontWeight: 700,
-          }}
           title={locale === 'ar' ? 'إرسال رسالة واتساب لرقم أو جهة محددة' : 'Send WhatsApp to Specific Number'}
         >
           <Send size={15} />
@@ -176,24 +159,24 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-secondary"
           onClick={onOpenMessageSettingsModal}
-          style={{
-            borderColor: isWhatsAppConfigured ? 'rgba(37, 211, 102, 0.4)' : undefined,
-            background: isWhatsAppConfigured ? 'rgba(37, 211, 102, 0.08)' : undefined,
-            color: isWhatsAppConfigured ? 'var(--whatsapp-color)' : undefined,
-          }}
+          style={isWhatsAppConfigured ? {
+            borderColor: 'var(--whatsapp-color)',
+            background: 'var(--whatsapp-bg)',
+            color: 'var(--whatsapp-color)',
+          } : undefined}
           title={t('whatsapp.api.settings')}
         >
-          <MessageCircle size={16} style={{ color: isWhatsAppConfigured ? 'var(--whatsapp-color)' : undefined }} />
+          <MessageCircle size={16} className={isWhatsAppConfigured ? 'text-whatsapp' : undefined} />
           <span>{t('header.messages.settings')}</span>
           {isWhatsAppConfigured && (
             <span
               style={{
-                width: '7px',
-                height: '7px',
+                width: 7,
+                height: 7,
                 borderRadius: '50%',
-                background: 'var(--whatsapp-button)',
+                background: 'var(--whatsapp-color)',
                 display: 'inline-block',
-                boxShadow: '0 0 6px #25D366',
+                boxShadow: '0 0 6px var(--whatsapp-color)',
               }}
             />
           )}

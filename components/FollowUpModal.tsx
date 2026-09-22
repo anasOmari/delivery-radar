@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Check, MessageSquare, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Check, MessageSquare, AlertCircle } from 'lucide-react';
 import { Lead, LeadStatus } from '@/lib/types';
 import { useLanguage } from '@/lib/LanguageContext';
 import { getStatusLabel } from '@/lib/exporter';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Field, TextInput, TextArea } from './ui/Field';
 
 interface FollowUpModalProps {
   lead: Lead;
@@ -32,129 +35,97 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({ lead, onSave, onCl
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-md" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-header-icon">
-              <Calendar size={18} />
-            </div>
-            <div>
-              <h3 className="modal-title">{t('followup.title')}</h3>
-              <p className="modal-subtitle">
-                {lead.name} • {lead.city || 'المنطقة'}
-              </p>
-            </div>
-          </div>
-          <button className="modal-close-btn" onClick={onClose} title={t('action.close')}>
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
-          <div className="modal-body">
-            {/* Quick Date Presets */}
-            <div className="modal-form-group">
-              <label className="modal-label">
-                <Clock size={14} />
-                <span>اختيار سريع لموعد المتابعة:</span>
-              </label>
-              <div className="flex-align gap-2" style={{ flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="preset-chip"
-                  onClick={() => handleQuickDate(0)}
-                >
-                  {t('followup.quick.today')}
-                </button>
-                <button
-                  type="button"
-                  className="preset-chip"
-                  onClick={() => handleQuickDate(1)}
-                >
-                  {t('followup.quick.tomorrow')}
-                </button>
-                <button
-                  type="button"
-                  className="preset-chip"
-                  onClick={() => handleQuickDate(3)}
-                >
-                  {t('followup.quick.3days')}
-                </button>
-                <button
-                  type="button"
-                  className="preset-chip"
-                  onClick={() => handleQuickDate(7)}
-                >
-                  {t('followup.quick.week')}
-                </button>
-              </div>
-            </div>
-
-            {/* Date Picker Input */}
-            <div className="modal-form-group">
-              <label className="modal-label">
-                <Calendar size={14} />
-                <span>{t('followup.date')}</span>
-              </label>
-              <input
-                type="date"
-                required
-                className="input-field"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-              />
-            </div>
-
-            {/* Status Select */}
-            <div className="modal-form-group">
-              <label className="modal-label">
-                <AlertCircle size={14} />
-                <span>{t('followup.status')}</span>
-              </label>
-              <select
-                className="input-field"
-                value={status}
-                onChange={e => setStatus(e.target.value as LeadStatus)}
-              >
-                <option value="new">{getStatusLabel('new', locale)}</option>
-                <option value="contacted">{getStatusLabel('contacted', locale)}</option>
-                <option value="interested">{getStatusLabel('interested', locale)} (ساخن 🔥)</option>
-                <option value="converted">{getStatusLabel('converted', locale)} 🎉</option>
-                <option value="rejected">{getStatusLabel('rejected', locale)}</option>
-              </select>
-            </div>
-
-            {/* Notes Textarea */}
-            <div className="modal-form-group">
-              <label className="modal-label">
-                <MessageSquare size={14} />
-                <span>{t('followup.notes')}</span>
-              </label>
-              <textarea
-                rows={3}
-                className="textarea-field"
-                placeholder="مثلاً: تحدثنا مع المدير وطلب معاودة الاتصال لإرسال العرض المعتمد..."
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              {t('action.cancel')}
+    <Modal
+      onClose={onClose}
+      size="md"
+      icon={<Calendar size={18} />}
+      iconTone="brand"
+      title={t('followup.title')}
+      subtitle={<>{lead.name} • {lead.city || 'المنطقة'}</>}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
+          <Button type="submit" form="followup-form" variant="primary" icon={<Check size={16} />}>
+            {t('followup.save')}
+          </Button>
+        </>
+      }
+    >
+      <form id="followup-form" onSubmit={handleSubmit}>
+        {/* Quick Date Presets */}
+        <Field label="اختيار سريع لموعد المتابعة:" icon={<Clock size={14} />}>
+          <div className="presets-list">
+            <button
+              type="button"
+              className="preset-chip"
+              onClick={() => handleQuickDate(0)}
+            >
+              {t('followup.quick.today')}
             </button>
-            <button type="submit" className="btn btn-primary">
-              <Check size={16} />
-              <span>{t('followup.save')}</span>
+            <button
+              type="button"
+              className="preset-chip"
+              onClick={() => handleQuickDate(1)}
+            >
+              {t('followup.quick.tomorrow')}
+            </button>
+            <button
+              type="button"
+              className="preset-chip"
+              onClick={() => handleQuickDate(3)}
+            >
+              {t('followup.quick.3days')}
+            </button>
+            <button
+              type="button"
+              className="preset-chip"
+              onClick={() => handleQuickDate(7)}
+            >
+              {t('followup.quick.week')}
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </Field>
+
+        {/* Date Picker Input */}
+        <Field label={t('followup.date')} icon={<Calendar size={14} />} htmlFor="followup-date">
+          <TextInput
+            id="followup-date"
+            type="date"
+            required
+            value={date}
+            onChange={e => setDate(e.target.value)}
+          />
+        </Field>
+
+        {/* Status Select */}
+        <Field label={t('followup.status')} icon={<AlertCircle size={14} />} htmlFor="followup-status">
+          <select
+            id="followup-status"
+            className="input-field"
+            value={status}
+            onChange={e => setStatus(e.target.value as LeadStatus)}
+          >
+            <option value="new">{getStatusLabel('new', locale)}</option>
+            <option value="contacted">{getStatusLabel('contacted', locale)}</option>
+            <option value="interested">{getStatusLabel('interested', locale)} (ساخن 🔥)</option>
+            <option value="converted">{getStatusLabel('converted', locale)} 🎉</option>
+            <option value="rejected">{getStatusLabel('rejected', locale)}</option>
+          </select>
+        </Field>
+
+        {/* Notes Textarea */}
+        <Field label={t('followup.notes')} icon={<MessageSquare size={14} />} htmlFor="followup-notes">
+          <TextArea
+            id="followup-notes"
+            rows={3}
+            placeholder="مثلاً: تحدثنا مع المدير وطلب معاودة الاتصال لإرسال العرض المعتمد..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+          />
+        </Field>
+      </form>
+    </Modal>
   );
 };

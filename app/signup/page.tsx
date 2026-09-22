@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Smartphone, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { Button, Field, TextInput, Banner } from '@/components/ui';
 import { OAuthButtons } from '@/components/OAuthButtons';
 import { useAuth, emailValidationError } from '@/lib/AuthContext';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -68,32 +69,23 @@ export default function SignupPage() {
       }
     >
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
-        {error && <div className="notification-banner banner-error" style={{ marginBottom: 0 }}><span>{error}</span></div>}
+        {error && <Banner tone="red"><span role="alert">{error}</span></Banner>}
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="signup-name">
-            <User size={14} />
-            {ar ? 'الاسم (اختياري)' : 'Name (optional)'}
-          </label>
-          <input
+        <Field label={ar ? 'الاسم (اختياري)' : 'Name (optional)'} icon={<User size={14} />} htmlFor="signup-name">
+          <TextInput
             id="signup-name"
-            className="input-field"
             type="text"
             autoComplete="name"
             placeholder={ar ? 'اسمك الكريم' : 'Your name'}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="signup-email">
-            <Mail size={14} />
-            {ar ? 'البريد الإلكتروني (اسم المستخدم)' : 'Email (username)'}
-          </label>
-          <input
+        <Field label={ar ? 'البريد الإلكتروني (اسم المستخدم)' : 'Email (username)'} icon={<Mail size={14} />} htmlFor="signup-email">
+          <TextInput
             id="signup-email"
-            className="input-field auth-input-ltr"
+            className="auth-input-ltr"
             type="email"
             inputMode="email"
             autoComplete="username"
@@ -102,16 +94,12 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="signup-phone">
-            <Smartphone size={14} />
-            {ar ? 'رقم الهاتف (اختياري)' : 'Phone number (optional)'}
-          </label>
-          <input
+        <Field label={ar ? 'رقم الهاتف (اختياري)' : 'Phone number (optional)'} icon={<Smartphone size={14} />} htmlFor="signup-phone">
+          <TextInput
             id="signup-phone"
-            className="input-field auth-input-ltr"
+            className="auth-input-ltr"
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -120,17 +108,13 @@ export default function SignupPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="signup-password">
-            <Lock size={14} />
-            {ar ? 'كلمة المرور' : 'Password'}
-          </label>
+        <Field label={ar ? 'كلمة المرور' : 'Password'} icon={<Lock size={14} />} htmlFor="signup-password">
           <div className="auth-password-wrap">
-            <input
+            <TextInput
               id="signup-password"
-              className="input-field auth-input-ltr"
+              className="auth-input-ltr"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
               dir="ltr"
@@ -147,16 +131,12 @@ export default function SignupPage() {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-        </div>
+        </Field>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="signup-confirm">
-            <Lock size={14} />
-            {ar ? 'تأكيد كلمة المرور' : 'Confirm password'}
-          </label>
-          <input
+        <Field label={ar ? 'تأكيد كلمة المرور' : 'Confirm password'} icon={<Lock size={14} />} htmlFor="signup-confirm">
+          <TextInput
             id="signup-confirm"
-            className="input-field auth-input-ltr"
+            className="auth-input-ltr"
             type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
             dir="ltr"
@@ -164,12 +144,11 @@ export default function SignupPage() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <button className="btn btn-search auth-submit" type="submit" disabled={submitting || loading}>
-          <UserPlus size={16} />
+        <Button type="submit" variant="primary" className="btn-search auth-submit" loading={submitting} disabled={submitting || loading} icon={<UserPlus size={16} />}>
           {submitting ? (ar ? 'جاري إنشاء الحساب...' : 'Creating account...') : ar ? 'إنشاء الحساب' : 'Sign up'}
-        </button>
+        </Button>
       </form>
       <OAuthButtons onError={setError} />
     </AuthShell>

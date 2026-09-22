@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { WhatsAppConfig } from './whatsappProviders';
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fiyigxxozeyxiteznwlk.supabase.co';
@@ -44,7 +45,7 @@ export async function logWhatsAppMessageToSupabase(params: {
 /**
  * Save WhatsApp Config directly to Supabase app_settings table
  */
-export async function saveWhatsAppConfigToSupabase(config: any) {
+export async function saveWhatsAppConfigToSupabase(config: WhatsAppConfig) {
   try {
     const { data, error } = await supabase.from('app_settings').upsert(
       {

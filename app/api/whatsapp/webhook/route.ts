@@ -11,19 +11,35 @@ export async function GET() {
   return NextResponse.json({ status: 'online', service: 'WhatsApp booking webhook', bookingStorage });
 }
 
-function incomingMessage(body: Record<string, any>): { text: string; isLocation: boolean } {
-  const data = body.messageData || {};
+interface GreenApiMessageData {
+  typeMessage?: string;
+  locationMessageData?: { latitude?: unknown; longitude?: unknown; name?: unknown; nameLocation?: unknown; address?: unknown };
+  buttonsResponseMessage?: { selectedButtonId?: unknown; selectedDisplayText?: unknown };
+  templateButtonReplyMessage?: { selectedId?: unknown; selectedDisplayText?: unknown };
+  textMessageData?: { textMessage?: unknown };
+  extendedTextMessageData?: { text?: unknown };
+  textMessage?: unknown;
+}
+
+function asMessageData(value: unknown): GreenApiMessageData {
+  return (typeof value === 'object' && value !== null ? value : {}) as GreenApiMessageData;
+}
+
+const str = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+function incomingMessage(body: Record<string, unknown>): { text: string; isLocation: boolean } {
+  const data = asMessageData(body.messageData);
   if (data.typeMessage === 'locationMessage' || data.locationMessageData) {
     const loc = data.locationMessageData || {};
     if (Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))) {
-      return { text: `موقع جغرافي: https://maps.google.com/?q=${loc.latitude},${loc.longitude}${loc.address ? ` ${loc.address}` : ''}`, isLocation: true };
+      return { text: `موقع جغرافي: https://maps.google.com/?q=${String(loc.latitude)},${String(loc.longitude)}${loc.address ? ` ${str(loc.address)}` : ''}`, isLocation: true };
     }
     return { text: '', isLocation: true };
   }
   if (data.typeMessage === 'buttonsResponseMessage' || data.buttonsResponseMessage || data.templateButtonReplyMessage) {
-    return { text: String(data.buttonsResponseMessage?.selectedDisplayText || data.templateButtonReplyMessage?.selectedDisplayText || data.buttonsResponseMessage?.selectedButtonId || data.templateButtonReplyMessage?.selectedId || ''), isLocation: false };
+    return { text: String(str(data.buttonsResponseMessage?.selectedDisplayText) || str(data.templateButtonReplyMessage?.selectedDisplayText) || str(data.buttonsResponseMessage?.selectedButtonId) || str(data.templateButtonReplyMessage?.selectedId) || ''), isLocation: false };
   }
-  return { text: String(data.textMessageData?.textMessage || data.extendedTextMessageData?.text || data.textMessage || '').slice(0, 4000), isLocation: false };
+  return { text: String(str(data.textMessageData?.textMessage) || str(data.extendedTextMessageData?.text) || str(data.textMessage) || '').slice(0, 4000), isLocation: false };
 }
 
 async function fallbackHistory(phone: string, limit: number): Promise<ChatMessage[]> {

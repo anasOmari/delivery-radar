@@ -34,8 +34,8 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
   const expectedForecastRevenue = Math.round((totalLeads * (closeRate / 100)) * dealAvgPrice);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-      <div className="stats-grid" style={{ marginBottom: 0 }}>
+    <div className="ui-stack ui-mb-2">
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon icon-purple">
             <Users size={22} />
@@ -84,7 +84,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
           </div>
           <div className="stat-content">
             <span className="stat-label">{t('stats.pipeline_value')}</span>
-            <h3 className="stat-value" style={{ color: 'var(--brand-primary)' }}>
+            <h3 className="stat-value ui-text-brand">
               ${realizedRevenue.toLocaleString()}
             </h3>
             <span className="stat-sub">{t('stats.pipeline_value.sub')}</span>
@@ -112,7 +112,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ leads }) => {
             </div>
             <div className="revenue-item">
               <span className="revenue-label">{t('stats.revenue.realized')}</span>
-              <div className="revenue-value" style={{ color: 'var(--status-green)' }}>${realizedRevenue.toLocaleString()}</div>
+              <div className="revenue-value ui-text-green">${realizedRevenue.toLocaleString()}</div>
               <span className="stat-sub">{converted} {locale === 'ar' ? 'صفقات مكتملة' : 'deals closed'}</span>
             </div>
             <div className="revenue-controls">

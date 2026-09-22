@@ -92,7 +92,7 @@ export const WatiProvider: WhatsAppProviderInterface = {
     }
   },
 
-  async checkNumber(_config: WhatsAppConfig, _phone: string): Promise<boolean> {
+  async checkNumber(): Promise<boolean> {
     return true;
   }
 };

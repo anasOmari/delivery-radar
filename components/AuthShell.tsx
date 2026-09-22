@@ -25,7 +25,7 @@ export const AuthShell: React.FC<{
       <div className="auth-card">
         <div className="auth-topbar">
           <Link href="/" className="auth-brand">
-            <span className="brand-logo" style={{ width: 38, height: 38 }}>
+            <span className="brand-logo brand-logo--sm">
               <Building2 size={19} />
             </span>
             <span className="auth-brand-text">

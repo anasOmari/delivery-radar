@@ -38,11 +38,13 @@ import {
   MessageSquareOff
 } from 'lucide-react';
 import { InstagramIcon, FacebookIcon } from './SocialIcons';
-import { Lead, LeadStatus, FilterState, LinkStatus } from '@/lib/types';
+import { Lead, LeadStatus, FilterState } from '@/lib/types';
 import { getStatusLabel, formatPhoneForWhatsApp } from '@/lib/exporter';
 import { useLanguage } from '@/lib/LanguageContext';
 import { MapView } from './MapView';
 import { checkPhoneWhatsAppEligibility } from '@/lib/opportunity';
+import { Button, Field, TextInput, StatusPill, Banner, EmptyState } from './ui';
+import type { StatusTone } from './ui';
 
 interface LeadTableProps {
   leads: Lead[];
@@ -63,12 +65,20 @@ interface LeadTableProps {
   validateProgress?: { done: number; total: number };
 }
 
-const KANBAN_STAGES: { id: LeadStatus; titleKey: string; icon: string; color: string }[] = [
-  { id: 'new', titleKey: 'kanban.new', icon: '🆕', color: '#6366f1' },
-  { id: 'contacted', titleKey: 'kanban.contacted', icon: '📞', color: '#3b82f6' },
-  { id: 'interested', titleKey: 'kanban.interested', icon: '📄', color: '#f59e0b' },
-  { id: 'converted', titleKey: 'kanban.converted', icon: '🏆', color: '#10b981' },
-  { id: 'rejected', titleKey: 'kanban.rejected', icon: '❌', color: '#ef4444' }
+const STATUS_TONE: Record<LeadStatus, StatusTone> = {
+  new: 'purple',
+  contacted: 'blue',
+  interested: 'amber',
+  converted: 'green',
+  rejected: 'red'
+};
+
+const KANBAN_STAGES: { id: LeadStatus; titleKey: string; tone: StatusTone }[] = [
+  { id: 'new', titleKey: 'kanban.new', tone: 'purple' },
+  { id: 'contacted', titleKey: 'kanban.contacted', tone: 'blue' },
+  { id: 'interested', titleKey: 'kanban.interested', tone: 'amber' },
+  { id: 'converted', titleKey: 'kanban.converted', tone: 'green' },
+  { id: 'rejected', titleKey: 'kanban.rejected', tone: 'red' }
 ];
 
 export const LeadTable: React.FC<LeadTableProps> = ({
@@ -127,6 +137,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
   // Reset to page 1 whenever filters or leads count changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pagination to first page when filters or result count change
     setCurrentPage(1);
   }, [filters, leads.length]);
 
@@ -184,12 +195,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     })
     .sort((a, b) => {
       const key = filters.sortBy;
-      let valA: any = a[key] ?? 0;
-      let valB: any = b[key] ?? 0;
+      let valA: string | number = (a[key] as string | number | undefined) ?? 0;
+      let valB: string | number = (b[key] as string | number | undefined) ?? 0;
 
       if (typeof valA === 'string') {
         valA = valA.toLowerCase();
-        valB = valB.toLowerCase();
+        valB = (valB as string).toLowerCase();
       }
 
       if (filters.sortOrder === 'asc') {
@@ -233,32 +244,39 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     }
   };
 
+  const validatePercent =
+    validateProgress && validateProgress.total > 0
+      ? Math.round((validateProgress.done / validateProgress.total) * 100)
+      : 0;
+
   return (
     <section className="lead-table-wrapper" aria-labelledby="leads-title">
       <div className="section-heading"><h2 id="leads-title" className="section-title">{locale === 'ar' ? 'العملاء' : 'Leads'}</h2><span className="count-label">{filteredLeads.length}</span></div>
       {/* Controls Bar */}
       <div className="table-controls-bar">
-        <div className="search-filter-box" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <div className="search-input-wrapper">
-            <Search size={15} />
-            <input
+        <div className="search-filter-box">
+          <Field label={t('table.search_placeholder')} icon={<Search size={15} />} htmlFor="lead-search">
+            <TextInput
+              id="lead-search"
               type="text"
               aria-label={t('table.search_placeholder')}
               placeholder={t('table.search_placeholder')}
               value={filters.searchTerm}
               onChange={e => setFilters({ ...filters, searchTerm: e.target.value })}
             />
-          </div>
+          </Field>
 
           <details className="lead-filters disclosure">
             <summary>{locale === 'ar' ? 'تصفية وترتيب' : 'Filter and sort'}</summary>
             <div className="lead-filter-fields">
           {/* Status Filter */}
+          <Field label={t('table.filter.status')} htmlFor="lead-filter-status">
           <select
+            id="lead-filter-status"
             className="filter-select"
             aria-label={t('table.filter.status')}
             value={filters.status}
-            onChange={e => setFilters({ ...filters, status: e.target.value as any })}
+            onChange={e => setFilters({ ...filters, status: e.target.value as FilterState['status'] })}
           >
             <option value="all">{t('table.filter.status')}: {t('table.filter.all')} ({leads.length})</option>
             <option value="new">{t('table.filter.new')}</option>
@@ -267,71 +285,88 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             <option value="converted">{t('table.filter.converted')}</option>
             <option value="rejected">{t('table.filter.rejected')}</option>
           </select>
+          </Field>
 
           {/* Website Filter */}
+          <Field label={t('table.filter.website')} htmlFor="lead-filter-website">
           <select
+            id="lead-filter-website"
             className="filter-select"
             aria-label={t('table.filter.website')}
             value={filters.websiteFilter}
-            onChange={e => setFilters({ ...filters, websiteFilter: e.target.value as any })}
+            onChange={e => setFilters({ ...filters, websiteFilter: e.target.value as FilterState['websiteFilter'] })}
           >
             <option value="all">{t('table.filter.website')}: {t('table.filter.all')}</option>
             <option value="no_website">{t('table.filter.no_website')}</option>
             <option value="has_website">{t('table.filter.has_website')}</option>
           </select>
+          </Field>
 
           {/* Social Filter */}
+          <Field label={t('table.filter.social')} htmlFor="lead-filter-social">
           <select
+            id="lead-filter-social"
             className="filter-select"
             aria-label={t('table.filter.social')}
             value={filters.socialFilter}
-            onChange={e => setFilters({ ...filters, socialFilter: e.target.value as any })}
+            onChange={e => setFilters({ ...filters, socialFilter: e.target.value as FilterState['socialFilter'] })}
           >
             <option value="all">{t('table.filter.social')}: {t('table.filter.all')}</option>
             <option value="has_social">{t('table.filter.has_social')}</option>
             <option value="no_social">{t('table.filter.no_social')}</option>
           </select>
+          </Field>
 
           {/* Follow-up Filter */}
+          <Field label={t('action.followup')} htmlFor="lead-filter-followup">
           <select
+            id="lead-filter-followup"
             className="filter-select"
             aria-label={t('action.followup')}
             value={filters.followUpFilter}
-            onChange={e => setFilters({ ...filters, followUpFilter: e.target.value as any })}
+            onChange={e => setFilters({ ...filters, followUpFilter: e.target.value as FilterState['followUpFilter'] })}
           >
             <option value="all">{t('action.followup')}: {t('table.filter.all')}</option>
             <option value="due_today">{t('action.followup')} {t('followup.quick.today')}</option>
             <option value="scheduled">{t('action.followup')} {t('table.filter.all')}</option>
           </select>
+          </Field>
 
           {/* Priority Filter */}
+          <Field label={t('table.filter.priority')} htmlFor="lead-filter-priority">
           <select
+            id="lead-filter-priority"
             className="filter-select"
             aria-label={t('table.filter.priority')}
             value={filters.priorityFilter}
-            onChange={e => setFilters({ ...filters, priorityFilter: e.target.value as any })}
+            onChange={e => setFilters({ ...filters, priorityFilter: e.target.value as FilterState['priorityFilter'] })}
           >
             <option value="all">{t('table.filter.priority')}: {t('table.filter.all')}</option>
             <option value="high">{t('table.filter.priority')} 🔥</option>
             <option value="medium">{t('table.filter.priority')}</option>
             <option value="low">{t('table.filter.priority')}</option>
           </select>
+          </Field>
 
           {/* Sort Control */}
-          <div className="sort-control">
-            <ArrowUpDown size={14} />
+          <Field
+            label={locale === 'ar' ? 'ترتيب حسب' : 'Sort by'}
+            icon={<ArrowUpDown size={14} />}
+            htmlFor="lead-sort-by"
+          >
             <select
+              id="lead-sort-by"
               className="filter-select"
               aria-label={locale === 'ar' ? 'ترتيب حسب' : 'Sort by'}
             value={filters.sortBy}
-              onChange={e => setFilters({ ...filters, sortBy: e.target.value as any })}
+              onChange={e => setFilters({ ...filters, sortBy: e.target.value as FilterState['sortBy'] })}
             >
               <option value="opportunityScore">{t('table.col.opportunity')}</option>
               <option value="rating">{t('table.filter.rating')}</option>
               <option value="userRatingsTotal">{t('table.col.rating')}</option>
               <option value="name">{t('common.name')}</option>
             </select>
-          </div>
+          </Field>
             </div>
           </details>
         </div>
@@ -339,42 +374,50 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         {/* View Switcher */}
         <div className="view-switcher flex-align gap-2">
           <div className="toggle-group">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
               aria-pressed={viewMode === 'table'}
               onClick={() => setViewMode('table')}
               title={t('table.view.table')}
+              icon={<List size={15} />}
             >
-              <List size={15} />
               <span>{t('table.view.table')}</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
               aria-pressed={viewMode === 'cards'}
               onClick={() => setViewMode('cards')}
               title={t('table.view.cards')}
+              icon={<LayoutGrid size={15} />}
             >
-              <LayoutGrid size={15} />
               <span>{t('table.view.cards')}</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               className={`toggle-btn ${viewMode === 'kanban' ? 'active' : ''}`}
               aria-pressed={viewMode === 'kanban'}
               onClick={() => setViewMode('kanban')}
               title={t('table.view.kanban')}
+              icon={<Columns size={15} />}
             >
-              <Columns size={15} />
               <span>{t('table.view.kanban')}</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               className={`toggle-btn ${viewMode === 'map' ? 'active' : ''}`}
               aria-pressed={viewMode === 'map'}
               onClick={() => setViewMode('map')}
               title={t('table.view.map')}
+              icon={<MapIcon size={15} />}
             >
-              <MapIcon size={15} />
               <span>{t('table.view.map')}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -382,49 +425,64 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       {/* Selection & Campaign Bar */}
       <div className="selection-bar">
         <div className="flex-align gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             className="checkbox-button"
             onClick={() => onSelectAll(!allSelected)}
+            icon={allSelected ? <CheckSquare size={16} className="text-purple" /> : <Square size={16} />}
           >
-            {allSelected ? <CheckSquare size={16} className="text-purple" /> : <Square size={16} />}
             <span>{t('table.select_all')} ({filteredLeads.length})</span>
-          </button>
+          </Button>
 
           {selectedIds.length > 0 && (
             <>
-              <span className="selected-badge">
+              <StatusPill tone="purple">
                 {t('table.selected')}: {selectedIds.length} / {leads.length}
-              </span>
-              <button
-                className="btn btn-whatsapp btn-sm"
+              </StatusPill>
+              <Button
+                variant="whatsapp"
+                size="sm"
                 onClick={() => onStartCampaign(selectedLeadsList)}
+                icon={<Send size={14} />}
               >
-                <Send size={14} />
                 <span>{t('table.start_campaign')} ({selectedIds.length})</span>
-              </button>
+              </Button>
             </>
           )}
         </div>
 
-        <div className="results-count" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="results-count flex-align gap-2">
           {onValidate && (
-            <button
-              className="btn btn-secondary btn-sm"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => onValidate(selectedIds.length > 0 ? selectedLeadsList : filteredLeads)}
               disabled={validating}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              loading={validating}
+              icon={<ShieldCheck size={14} />}
             >
-              <ShieldCheck size={14} />
               <span>
                 {validating
                   ? `${validateProgress?.done || 0}/${validateProgress?.total || 0}`
                   : t('action.validate') || 'Validate'}
               </span>
-            </button>
+            </Button>
           )}
           <span>{locale === 'ar' ? 'النتائج' : 'Results'}: {filteredLeads.length}</span>
         </div>
       </div>
+
+      {validating && validateProgress && validateProgress.total > 0 && (
+        <Banner tone="blue" icon={<ShieldCheck size={14} />}>
+          <span>
+            {validateProgress.done}/{validateProgress.total}
+          </span>
+          <span className="ui-progress-track">
+            <span className="ui-progress-fill" style={{ width: `${validatePercent}%` }} />
+          </span>
+        </Banner>
+      )}
 
       {/* Render View Modes */}
       {viewMode === 'map' ? (
@@ -440,28 +498,24 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               <div key={stage.id} className="kanban-column">
                 <div className="kanban-column-header">
                   <div className="flex-align gap-2">
-                    <span style={{ fontSize: '1.1rem' }}>{stage.icon}</span>
                     <h4 className="kanban-stage-title">{t(stage.titleKey)}</h4>
-                    <span className="kanban-count-pill">{stageLeads.length}</span>
+                    <StatusPill tone={stage.tone}>{stageLeads.length}</StatusPill>
                   </div>
                   <span className="kanban-val-pill">${stageValue.toLocaleString()} {t('kanban.pipeline_value')}</span>
                 </div>
 
                 <div className="kanban-cards-stack">
                   {stageLeads.length === 0 ? (
-                    <div className="kanban-empty-placeholder">{t('kanban.empty')}</div>
+                    <EmptyState title={t('kanban.empty')} />
                   ) : (
                     stageLeads.map(lead => {
-                      const cleanNum = formatPhoneForWhatsApp(lead.phone);
                       const isSelected = selectedIds.includes(lead.id);
 
                       return (
                         <div key={lead.id} className={`kanban-lead-card ${isSelected ? 'selected' : ''}`}>
                           <div className="flex-between">
-                            <button className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)}>
-                              {isSelected ? <CheckSquare size={14} className="text-purple" /> : <Square size={14} />}
-                            </button>
-                            <span className="kanban-score-tag">{lead.opportunityScore || 90}% {t('table.col.opportunity')}</span>
+                            <Button variant="ghost" size="icon" className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)} icon={isSelected ? <CheckSquare size={14} className="text-purple" /> : <Square size={14} />} />
+                            <StatusPill tone="blue">{lead.opportunityScore || 90}% {t('table.col.opportunity')}</StatusPill>
                           </div>
 
                           <div className="kanban-card-info">
@@ -481,8 +535,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                                 onClick={() => onOpenFollowUp(lead)}
                                 title={t('action.followup')}
                               >
-                                <Clock size={11} />
-                                <span>{t('action.followup')}: {lead.followUpDate}</span>
+                                <StatusPill tone="amber" icon={<Clock size={11} />}>
+                                  {t('action.followup')}: {lead.followUpDate}
+                                </StatusPill>
                               </div>
                             )}
                           </div>
@@ -490,58 +545,61 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                           {/* Action Bar */}
                           <div className="kanban-card-actions">
                             {lead.phone ? (
-                              <button
-                                className="btn btn-whatsapp btn-xs"
+                              <Button
+                                variant="whatsapp"
+                                size="xs"
                                 onClick={() => onOpenWhatsApp(lead)}
                                 title={t('action.whatsapp')}
+                                icon={<MessageCircle size={12} />}
                               >
-                                <MessageCircle size={12} />
                                 <span>{t('action.whatsapp')}</span>
-                              </button>
+                              </Button>
                             ) : null}
 
-                            <button
-                              className="btn btn-secondary btn-xs"
+                            <Button
+                              variant="secondary"
+                              size="xs"
                               onClick={() => onOpenProposal(lead)}
                               title={t('action.proposal')}
+                              icon={<FileText size={11} />}
                             >
-                              <FileText size={11} />
                               <span>{t('action.proposal')}</span>
-                            </button>
+                            </Button>
 
                             {lead.website && (
-                              <button
-                                className="btn btn-secondary btn-xs"
+                              <Button
+                                variant="secondary"
+                                size="xs"
                                 onClick={() => onOpenAudit(lead)}
                                 title={t('action.audit')}
+                                icon={<Gauge size={11} className="text-primary" />}
                               >
-                                <Gauge size={11} className="text-primary" />
                                 <span>{t('action.audit')}</span>
-                              </button>
+                              </Button>
                             )}
                           </div>
 
                           {/* Quick Stage Mover */}
                           <div className="kanban-stage-mover">
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="stage-move-btn"
                               onClick={() => handleMoveStage(lead.id, lead.status, 'prev')}
                               title={t('action.previous')}
                               disabled={stage.id === 'new'}
-                            >
-                              <ArrowRight size={12} />
-                            </button>
+                              icon={<ArrowRight size={12} />}
+                            />
                             <span className="text-xs subtext">{t('action.edit')}</span>
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="stage-move-btn"
                               onClick={() => handleMoveStage(lead.id, lead.status, 'next')}
                               title={t('action.next')}
                               disabled={stage.id === 'converted'}
-                            >
-                              <ArrowLeft size={12} />
-                            </button>
+                              icon={<ArrowLeft size={12} />}
+                            />
                           </div>
                         </div>
                       );
@@ -554,7 +612,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         </div>
       ) : viewMode === 'cards' ? (
         <div className="cards-grid">
-          {paginatedLeads.length === 0 && <p className="empty-state">{t('table.no_results')}</p>}
+          {paginatedLeads.length === 0 && <EmptyState icon={<Search size={18} />} title={t('table.no_results')} />}
           {paginatedLeads.map(lead => {
             const isSelected = selectedIds.includes(lead.id);
             const cleanNum = formatPhoneForWhatsApp(lead.phone);
@@ -562,12 +620,10 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             return (
               <div key={lead.id} className={`lead-card ${isSelected ? 'selected' : ''}`}>
                 <div className="card-top">
-                  <button className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)}>
-                    {isSelected ? <CheckSquare size={16} className="text-purple" /> : <Square size={16} />}
-                  </button>
-                  <div className="opp-score-badge" title={lead.opportunityReason}>
-                    <span>{lead.opportunityScore || 90}% {t('table.col.opportunity')}</span>
-                  </div>
+                  <Button variant="ghost" size="icon" className="check-btn" aria-label={`${t('table.selected')}: ${lead.name}`} aria-pressed={isSelected} onClick={() => onToggleSelect(lead.id)} icon={isSelected ? <CheckSquare size={16} className="text-purple" /> : <Square size={16} />} />
+                  <span title={lead.opportunityReason}>
+                    <StatusPill tone="blue">{lead.opportunityScore || 90}% {t('table.col.opportunity')}</StatusPill>
+                  </span>
                 </div>
 
                 <div className="card-main">
@@ -580,14 +636,14 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   </div>
 
                   {lead.phone && (
-                    <div className="card-info-item text-phone" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="card-info-item text-phone">
                       <Phone size={13} />
                       <span>{lead.phone}</span>
                       {lead.validation?.whatsapp === true && (
-                        <span title="WhatsApp ✓"><ShieldCheck size={12} style={{ color: '#16a34a' }} /></span>
+                        <span title="WhatsApp ✓"><ShieldCheck size={12} color="var(--status-green)" /></span>
                       )}
                       {lead.validation?.whatsapp === false && (
-                        <span title="No WhatsApp"><ShieldAlert size={12} style={{ color: '#dc2626' }} /></span>
+                        <span title="No WhatsApp"><ShieldAlert size={12} color="var(--status-red)" /></span>
                       )}
                     </div>
                   )}
@@ -609,21 +665,20 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                           {t('table.filter.has_website')} ↗
                         </a>
                         {lead.validation?.website === 'broken' && (
-                          <span title="Website down"><AlertTriangle size={12} style={{ color: '#f59e0b' }} /></span>
+                          <span title="Website down"><AlertTriangle size={12} color="var(--status-amber)" /></span>
                         )}
                         {lead.validation?.website === 'valid' && (
-                          <span title="Website OK"><Check size={12} style={{ color: '#16a34a' }} /></span>
+                          <span title="Website OK"><Check size={12} color="var(--status-green)" /></span>
                         )}
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-xs"
+                        <Button
+                          variant="secondary"
+                          size="xs"
                           onClick={() => onOpenAudit(lead)}
                           title={t('action.audit')}
-                          style={{ padding: '2px 6px', fontSize: '11px' }}
+                          icon={<Gauge size={11} className="text-primary" />}
                         >
-                          <Gauge size={11} className="text-primary" />
                           <span>{t('action.audit')}</span>
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <span className="website-tag website-none">{t('table.filter.no_website')}</span>
@@ -660,41 +715,43 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                       onClick={() => onOpenFollowUp(lead)}
                       title={t('action.followup')}
                     >
-                      <Calendar size={12} />
-                      <span>{t('action.followup')}: {lead.followUpDate}</span>
+                      <StatusPill tone="amber" icon={<Calendar size={12} />}>
+                        {t('action.followup')}: {lead.followUpDate}
+                      </StatusPill>
                     </div>
                   )}
                 </div>
 
                 <div className="card-status-select">
-                  <select
-                    className={`status-badge status-${lead.status}`}
-                    value={lead.status}
-                    onChange={e => onStatusChange(lead.id, e.target.value as LeadStatus)}
-                  >
-                    <option value="new">{getStatusLabel('new', locale)}</option>
-                    <option value="contacted">{getStatusLabel('contacted', locale)}</option>
-                    <option value="interested">{getStatusLabel('interested', locale)}</option>
-                    <option value="converted">{getStatusLabel('converted', locale)}</option>
-                    <option value="rejected">{getStatusLabel('rejected', locale)}</option>
-                  </select>
+                  <StatusPill tone={STATUS_TONE[lead.status]}>
+                    <select
+                      className={`status-badge status-${lead.status}`}
+                      value={lead.status}
+                      onChange={e => onStatusChange(lead.id, e.target.value as LeadStatus)}
+                    >
+                      <option value="new">{getStatusLabel('new', locale)}</option>
+                      <option value="contacted">{getStatusLabel('contacted', locale)}</option>
+                      <option value="interested">{getStatusLabel('interested', locale)}</option>
+                      <option value="converted">{getStatusLabel('converted', locale)}</option>
+                      <option value="rejected">{getStatusLabel('rejected', locale)}</option>
+                    </select>
+                  </StatusPill>
                 </div>
 
-                <div className="card-actions" style={{ flexWrap: 'wrap', gap: '6px' }}>
+                <div className="card-actions">
                   {lead.phone ? (
                     <>
                       {(lead.hasWhatsApp !== false && (lead.hasWhatsApp === true || checkPhoneWhatsAppEligibility(lead.phone, lead.country))) ? (
-                        <button className="btn btn-whatsapp btn-sm" onClick={() => onOpenWhatsApp(lead)}>
-                          <MessageCircle size={14} />
+                        <Button variant="whatsapp" size="sm" onClick={() => onOpenWhatsApp(lead)} icon={<MessageCircle size={14} />}>
                           <span>{t('action.whatsapp')}</span>
-                        </button>
+                        </Button>
                       ) : (
                         <span
-                          className="wa-not-registered-tag"
                           title={locale === 'ar' ? 'هذا الرقم أرضي أو غير مسجل في واتساب' : 'Not on WhatsApp'}
                         >
-                          <MessageSquareOff size={12} />
-                          <span>{locale === 'ar' ? 'غير مسجل في واتساب' : 'Not on WhatsApp'}</span>
+                          <StatusPill tone="red" icon={<MessageSquareOff size={12} />}>
+                            {locale === 'ar' ? 'غير مسجل في واتساب' : 'Not on WhatsApp'}
+                          </StatusPill>
                         </span>
                       )}
                       <a href={`tel:${cleanNum}`} className="btn btn-call btn-sm">
@@ -704,22 +761,23 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     </>
                   ) : null}
 
-                  <button
-                    className="btn btn-secondary btn-sm"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => onOpenProposal(lead)}
                     title={t('action.proposal')}
+                    icon={<FileText size={13} />}
                   >
-                    <FileText size={13} />
                     <span>{t('action.proposal')}</span>
-                  </button>
+                  </Button>
 
-                  <button
-                    className="btn btn-secondary btn-icon"
+                  <Button
+                    variant="secondary"
+                    size="icon"
                     onClick={() => onOpenFollowUp(lead)}
                     title={t('action.followup')}
-                  >
-                    <Clock size={14} />
-                  </button>
+                    icon={<Clock size={14} />}
+                  />
 
                   {lead.googleMapsUrl && (
                     <a
@@ -743,10 +801,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           <table className="custom-lead-table">
             <thead>
               <tr>
-                <th style={{ width: '38px' }}>
-                  <button className="checkbox-button" onClick={() => onSelectAll(!allSelected)}>
-                    {allSelected ? <CheckSquare size={15} /> : <Square size={15} />}
-                  </button>
+                <th>
+                  <Button variant="ghost" size="icon" className="checkbox-button" onClick={() => onSelectAll(!allSelected)} icon={allSelected ? <CheckSquare size={15} /> : <Square size={15} />} />
                 </th>
                 <th>{t('table.col.opportunity')}</th>
                 <th>{t('table.col.business')}</th>
@@ -757,14 +813,14 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 <th>{t('table.col.rating')}</th>
                 <th>{t('table.col.status')}</th>
                 <th>{t('table.col.notes')}</th>
-                <th style={{ textAlign: 'center' }}>{t('table.col.actions')}</th>
+                <th>{t('table.col.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {filteredLeads.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="empty-row">
-                    {t('table.no_results')}
+                    <EmptyState icon={<Search size={18} />} title={t('table.no_results')} />
                   </td>
                 </tr>
               ) : (
@@ -776,23 +832,21 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   return (
                     <tr key={lead.id} className={isSelected ? 'row-selected' : ''}>
                       <td>
-                        <button className="checkbox-button" onClick={() => onToggleSelect(lead.id)}>
-                          {isSelected ? <CheckSquare size={15} className="text-purple" /> : <Square size={15} />}
-                        </button>
+                        <Button variant="ghost" size="icon" className="checkbox-button" onClick={() => onToggleSelect(lead.id)} icon={isSelected ? <CheckSquare size={15} className="text-purple" /> : <Square size={15} />} />
                       </td>
 
                       {/* Opportunity Score */}
                       <td className="cell-opp">
-                        <div className="opp-score-pill" title={lead.opportunityReason}>
-                          <span>{lead.opportunityScore || 90}% {t('table.col.opportunity')}</span>
-                        </div>
+                        <span title={lead.opportunityReason}>
+                          <StatusPill tone="blue">{lead.opportunityScore || 90}% {t('table.col.opportunity')}</StatusPill>
+                        </span>
                       </td>
 
                       <td className="cell-business-name">
                         <div className="business-name-box">
                           <strong className="name-title">{lead.name}</strong>
                           <span className="name-category">{lead.category}</span>
-                          <span className="city-tag" style={{ marginTop: '2px', display: 'inline-block' }}>
+                          <span className="city-tag">
                             {lead.city}
                           </span>
                         </div>
@@ -804,47 +858,37 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                             <span className="phone-number">{lead.phone}</span>
                             {lead.validation?.whatsapp === true && (
                               <span
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                  padding: '1px 6px', borderRadius: '10px',
-                                  background: 'rgba(34, 197, 94, 0.12)', color: '#16a34a',
-                                  fontSize: '0.68rem', fontWeight: 700,
-                                }}
                                 title={locale === 'ar' ? 'الرقم موجود على واتساب' : 'Number has WhatsApp'}
                               >
-                                <ShieldCheck size={10} /> WA
+                                <StatusPill tone="whatsapp" icon={<ShieldCheck size={10} />}>WA</StatusPill>
                               </span>
                             )}
                             {lead.validation?.whatsapp === false && (
                               <span
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                  padding: '1px 6px', borderRadius: '10px',
-                                  background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626',
-                                  fontSize: '0.68rem', fontWeight: 700,
-                                }}
                                 title={locale === 'ar' ? 'الرقم غير موجود على واتساب' : 'Number not on WhatsApp'}
                               >
-                                <ShieldAlert size={10} /> No WA
+                                <StatusPill tone="red" icon={<ShieldAlert size={10} />}>No WA</StatusPill>
                               </span>
                             )}
                             <div className="phone-quick-actions">
                               {(lead.hasWhatsApp !== false && (lead.hasWhatsApp === true || checkPhoneWhatsAppEligibility(lead.phone, lead.country))) ? (
-                                <button
+                                <Button
+                                  variant="whatsapp"
+                                  size="xs"
                                   className="action-pill pill-whatsapp"
                                   onClick={() => onOpenWhatsApp(lead)}
                                   title={t('action.whatsapp')}
+                                  icon={<MessageCircle size={12} />}
                                 >
-                                  <MessageCircle size={12} />
                                   <span>{t('action.whatsapp')}</span>
-                                </button>
+                                </Button>
                               ) : (
                                 <span
-                                  className="wa-not-registered-tag"
                                   title={locale === 'ar' ? 'هذا الرقم أرضي أو غير مسجل في تطبيق واتساب' : 'This number is not registered on WhatsApp'}
                                 >
-                                  <MessageSquareOff size={11} />
-                                  <span>{locale === 'ar' ? 'غير مسجل في واتساب' : 'Not on WhatsApp'}</span>
+                                  <StatusPill tone="red" icon={<MessageSquareOff size={11} />}>
+                                    {locale === 'ar' ? 'غير مسجل في واتساب' : 'Not on WhatsApp'}
+                                  </StatusPill>
                                 </span>
                               )}
                               <a
@@ -864,7 +908,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
                       {/* Email & Social Links */}
                       <td className="cell-social">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div className="ui-field">
                           {lead.email ? (
                             <a
                               href={`mailto:${lead.email}`}
@@ -906,7 +950,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                             ) : null}
 
                             {!lead.socialLinks?.instagram && !lead.socialLinks?.facebook && (
-                              <span className="badge-none" style={{ fontSize: '10px' }}>
+                              <span className="badge-none">
                                 {t('table.filter.no_social')}
                               </span>
                             )}
@@ -929,21 +973,20 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                               <span>{t('table.filter.has_website')} ↗</span>
                             </a>
                             {lead.validation?.website === 'broken' && (
-                              <span title={locale === 'ar' ? 'الموقع غير متاح' : 'Website down'}><AlertTriangle size={12} style={{ color: '#f59e0b' }} /></span>
+                              <span title={locale === 'ar' ? 'الموقع غير متاح' : 'Website down'}><AlertTriangle size={12} color="var(--status-amber)" /></span>
                             )}
                             {lead.validation?.website === 'valid' && (
-                              <span title={locale === 'ar' ? 'الموقع يعمل' : 'Website OK'}><Check size={12} style={{ color: '#16a34a' }} /></span>
+                              <span title={locale === 'ar' ? 'الموقع يعمل' : 'Website OK'}><Check size={12} color="var(--status-green)" /></span>
                             )}
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-xs"
+                            <Button
+                              variant="secondary"
+                              size="xs"
                               onClick={() => onOpenAudit(lead)}
                               title={t('action.audit')}
-                              style={{ padding: '2px 6px', fontSize: '11px' }}
+                              icon={<Gauge size={11} className="text-primary" />}
                             >
-                              <Gauge size={11} className="text-primary" />
                               <span>{t('action.audit')}</span>
-                            </button>
+                            </Button>
                           </div>
                         ) : (
                           <span className="website-tag website-none" title={t('table.filter.no_website')}>
@@ -960,61 +1003,61 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                             onClick={() => onOpenFollowUp(lead)}
                             title={lead.followUpNotes || t('action.followup')}
                           >
-                            <Clock size={12} />
-                            <span>{lead.followUpDate}</span>
+                            <StatusPill tone={isFollowUpDue ? 'amber' : 'blue'} icon={<Clock size={12} />}>
+                              {lead.followUpDate}
+                            </StatusPill>
                             {isFollowUpDue && <span className="due-dot" title={t('action.followup')}></span>}
                           </div>
                         ) : (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="xs"
                             className="btn-add-followup"
                             onClick={() => onOpenFollowUp(lead)}
                             title={t('action.followup')}
+                            icon={<Calendar size={12} />}
                           >
-                            <Calendar size={12} />
                             <span>{t('action.followup')}</span>
-                          </button>
+                          </Button>
                         )}
                       </td>
 
                       {/* Rating */}
                       <td className="cell-rating">
-                        <div className="rating-pill">
-                          <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                          <strong>{lead.rating}</strong>
-                          <span className="rating-count">({lead.userRatingsTotal})</span>
-                        </div>
+                        <StatusPill tone="amber" icon={<Star size={12} fill="var(--status-amber)" color="var(--status-amber)" />}>
+                          <><strong>{lead.rating}</strong><span className="rating-count">({lead.userRatingsTotal})</span></>
+                        </StatusPill>
                       </td>
 
                       {/* Status */}
                       <td className="cell-status">
-                        <select
-                          className={`status-select-dropdown status-${lead.status}`}
-                          value={lead.status}
-                          onChange={e => onStatusChange(lead.id, e.target.value as LeadStatus)}
-                        >
-                          <option value="new">{getStatusLabel('new', locale)}</option>
-                          <option value="contacted">{getStatusLabel('contacted', locale)}</option>
-                          <option value="interested">{getStatusLabel('interested', locale)}</option>
-                          <option value="converted">{getStatusLabel('converted', locale)}</option>
-                          <option value="rejected">{getStatusLabel('rejected', locale)}</option>
-                        </select>
+                        <StatusPill tone={STATUS_TONE[lead.status]}>
+                          <select
+                            className={`status-select-dropdown status-${lead.status}`}
+                            value={lead.status}
+                            onChange={e => onStatusChange(lead.id, e.target.value as LeadStatus)}
+                          >
+                            <option value="new">{getStatusLabel('new', locale)}</option>
+                            <option value="contacted">{getStatusLabel('contacted', locale)}</option>
+                            <option value="interested">{getStatusLabel('interested', locale)}</option>
+                            <option value="converted">{getStatusLabel('converted', locale)}</option>
+                            <option value="rejected">{getStatusLabel('rejected', locale)}</option>
+                          </select>
+                        </StatusPill>
                       </td>
 
                       {/* Notes */}
                       <td className="cell-notes">
                         {editingNoteId === lead.id ? (
                           <div className="note-edit-box">
-                            <input
+                            <TextInput
                               type="text"
-                              className="input-field input-sm"
+                              className="input-sm"
                               value={tempNote}
                               onChange={e => setTempNote(e.target.value)}
                               autoFocus
                             />
-                            <button className="btn btn-icon btn-sm" onClick={() => handleSaveNote(lead.id)}>
-                              <Check size={14} />
-                            </button>
+                            <Button variant="secondary" size="icon" onClick={() => handleSaveNote(lead.id)} icon={<Check size={14} />} />
                           </div>
                         ) : (
                           <div className="note-display-box" onClick={() => handleStartEditNote(lead)}>
@@ -1027,14 +1070,15 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                       {/* Actions */}
                       <td className="cell-actions">
                         <div className="flex-align justify-center gap-1">
-                          <button
-                            className="btn btn-secondary btn-xs"
+                          <Button
+                            variant="secondary"
+                            size="xs"
                             onClick={() => onOpenProposal(lead)}
                             title={t('action.proposal')}
+                            icon={<FileText size={12} />}
                           >
-                            <FileText size={12} />
                             <span>{t('action.proposal')}</span>
-                          </button>
+                          </Button>
 
                           {lead.googleMapsUrl && (
                             <a
@@ -1048,13 +1092,14 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                             </a>
                           )}
 
-                          <button
-                            className="btn btn-icon btn-delete"
+                          <Button
+                            variant="danger"
+                            size="icon"
+                            className="btn-delete"
                             onClick={() => onDeleteLead(lead.id)}
                             title={t('action.delete')}
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                            icon={<Trash2 size={13} />}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -1083,44 +1128,46 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             </div>
 
             <div className="page-size-selector">
-              <span>{locale === 'ar' ? 'لكل صفحة:' : 'Per page:'}</span>
-              <select
-                className="page-size-select"
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                <option value={10}>10</option>
-                <option value={15}>15</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+              <Field label={locale === 'ar' ? 'لكل صفحة:' : 'Per page:'} htmlFor="lead-page-size">
+                <select
+                  id="lead-page-size"
+                  className="page-size-select"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </Field>
             </div>
           </div>
 
           <div className="pagination-nav">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="page-nav-btn"
               onClick={() => setCurrentPage(1)}
               disabled={safeCurrentPage === 1}
               title={locale === 'ar' ? 'الصفحة الأولى' : 'First page'}
-            >
-              <ChevronsRight size={15} />
-            </button>
+              icon={<ChevronsRight size={15} />}
+            />
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="page-nav-btn"
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={safeCurrentPage === 1}
               title={locale === 'ar' ? 'الصفحة السابقة' : 'Previous page'}
-            >
-              <ChevronRight size={15} />
-            </button>
+              icon={<ChevronRight size={15} />}
+            />
 
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(p => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
@@ -1137,36 +1184,37 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 }
                 const pageNum = Number(p);
                 return (
-                  <button
+                  <Button
                     key={pageNum}
-                    type="button"
+                    variant="ghost"
+                    size="icon"
                     className={`page-nav-btn ${pageNum === safeCurrentPage ? 'active' : ''}`}
                     onClick={() => setCurrentPage(pageNum)}
                   >
                     {pageNum}
-                  </button>
+                  </Button>
                 );
               })}
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="page-nav-btn"
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={safeCurrentPage === totalPages}
               title={locale === 'ar' ? 'الصفحة التالية' : 'Next page'}
-            >
-              <ChevronLeft size={15} />
-            </button>
+              icon={<ChevronLeft size={15} />}
+            />
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="page-nav-btn"
               onClick={() => setCurrentPage(totalPages)}
               disabled={safeCurrentPage === totalPages}
               title={locale === 'ar' ? 'الصفحة الأخيرة' : 'Last page'}
-            >
-              <ChevronsLeft size={15} />
-            </button>
+              icon={<ChevronsLeft size={15} />}
+            />
           </div>
         </div>
       )}

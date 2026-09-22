@@ -3,6 +3,20 @@ import { Lead } from '@/lib/types';
 import { CITY_COORDINATES } from '@/lib/mockData';
 import { calculateOpportunity, checkPhoneWhatsAppEligibility } from '@/lib/opportunity';
 
+// Minimal shape of a Google Places Text Search result used by this route.
+interface GooglePlaceResult {
+  place_id?: string;
+  name?: string;
+  website?: string;
+  formatted_address?: string;
+  types?: string[];
+  rating?: number;
+  user_ratings_total?: number;
+  geometry?: { location?: { lat?: number; lng?: number } };
+  _searchedCity?: string;
+  [key: string]: unknown;
+}
+
 // Helper to pause execution (Google next_page_token requires ~2000ms before becoming active)
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -47,7 +61,7 @@ export async function GET(req: NextRequest) {
   // ==========================================
   if (apiKey && apiKey.trim().length > 10) {
     try {
-      let allRawResults: any[] = [];
+      let allRawResults: GooglePlaceResult[] = [];
       let currentNextPageToken: string | null = null;
 
       if (isAllRegions && !pageTokenParam) {
@@ -62,7 +76,7 @@ export async function GET(req: NextRequest) {
             const res = await fetch(url);
             const data = await res.json();
             if (data.status === 'OK' && data.results) {
-              return data.results.map((r: any) => ({ ...r, _searchedCity: cName }));
+              return data.results.map((r: GooglePlaceResult) => ({ ...r, _searchedCity: cName }));
             }
             return [];
           } catch {
@@ -79,7 +93,7 @@ export async function GET(req: NextRequest) {
         let pagesFetched = 0;
         const maxPages = Math.ceil(targetLimit / 20);
 
-        let initialUrl = pageTokenParam
+        const initialUrl = pageTokenParam
           ? `https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken=${encodeURIComponent(pageTokenParam)}&language=ar&key=${apiKey.trim()}`
           : `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(googleQuery)}&language=ar&key=${apiKey.trim()}`;
 
@@ -111,7 +125,7 @@ export async function GET(req: NextRequest) {
       // Deduplication against previously seen place IDs and internal dupes
       const seenCurrentIds = new Set<string>();
       let skippedCount = 0;
-      const uniqueResults: any[] = [];
+      const uniqueResults: GooglePlaceResult[] = [];
 
       for (const item of allRawResults) {
         if (!item.place_id) continue;
@@ -128,7 +142,7 @@ export async function GET(req: NextRequest) {
       const itemsToProcess = uniqueResults.slice(0, targetLimit);
 
       // Fetch place details for real phone and website
-      const leadPromises = itemsToProcess.map(async (item: any) => {
+      const leadPromises = itemsToProcess.map(async (item: GooglePlaceResult) => {
         let phone = '';
         let website = item.website || '';
         let mapsUrl = item.place_id ? `https://www.google.com/maps/place/?q=place_id:${item.place_id}` : '';
@@ -185,8 +199,8 @@ export async function GET(req: NextRequest) {
           extractedAt: new Date().toISOString().split('T')[0],
           isNew: true,
           socialLinks: {
-            instagram: website && Math.random() > 0.4 ? `https://instagram.com/${item.name.replace(/\s+/g, '_')}` : undefined,
-            facebook: website && Math.random() > 0.3 ? `https://facebook.com/${item.name.replace(/\s+/g, '')}` : undefined
+            instagram: website && item.name && Math.random() > 0.4 ? `https://instagram.com/${item.name.replace(/\s+/g, '_')}` : undefined,
+            facebook: website && item.name && Math.random() > 0.3 ? `https://facebook.com/${item.name.replace(/\s+/g, '')}` : undefined
           }
         };
 
@@ -221,10 +235,11 @@ export async function GET(req: NextRequest) {
         leads: liveLeads,
         message: statusMessage
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '';
       return NextResponse.json({
         success: false,
-        message: 'فشل الاتصال بـ Google API: ' + (error.message || '')
+        message: 'فشل الاتصال بـ Google API: ' + (message || '')
       }, { status: 500 });
     }
   }

@@ -32,7 +32,7 @@ export function getSeenPlaceIds(): string[] {
     const vault = getLeadVault();
     const ids = vault.map(l => l.placeId || l.id).filter(Boolean);
     return ids;
-  } catch (e) {
+  } catch {
     return [];
   }
 }

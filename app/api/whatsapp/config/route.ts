@@ -6,9 +6,13 @@ import {
   DEFAULT_BOT_PRICING,
   DEFAULT_BOT_RULES,
   applyBrainDefaults,
+  type BotSettings,
 } from '@/lib/chatbotConfig';
+import type { WhatsAppConfig } from '@/lib/whatsappProviders';
 
-let memoryConfig: any = {
+type ServerWhatsAppConfig = WhatsAppConfig & BotSettings & Record<string, unknown>;
+
+let memoryConfig: ServerWhatsAppConfig = {
   provider: 'greenapi',
   greenapi: {
     idInstance: process.env.GREEN_API_ID_INSTANCE || process.env.NEXT_PUBLIC_GREEN_API_ID_INSTANCE || '710722741021',
@@ -74,7 +78,8 @@ export async function POST(req: NextRequest) {
     memoryConfig = updated;
 
     return NextResponse.json({ success: true, config: updated });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

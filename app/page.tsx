@@ -28,6 +28,7 @@ import {
   DEFAULT_AUTO_MESSAGE_TEMPLATE
 } from '@/lib/whatsappProviders';
 import { AlertTriangle, CheckCircle, Info, RefreshCw, Layers } from 'lucide-react';
+import { Banner, Button, TextInput } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import { 
@@ -61,6 +62,7 @@ export default function Home() {
     try {
       if (localStorage.getItem('phone_prompt_dismissed') === '1') return;
     } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time prompt flag synced from auth/localStorage
     setShowPhonePrompt(true);
   }, [authLoading, user]);
 
@@ -102,6 +104,7 @@ export default function Home() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial theme synced from document/storage
     setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
     const syncTheme = (event: StorageEvent) => {
       if (event.key !== 'app_theme' && event.key !== null) return;
@@ -148,6 +151,7 @@ export default function Home() {
       const savedKey = localStorage.getItem('gmaps_api_key') || '';
       const savedLeads = localStorage.getItem('gmaps_leads');
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage
       setApiKey(savedKey);
 
       // Load WhatsApp Config
@@ -367,7 +371,7 @@ export default function Home() {
           message: data.message || t('notify.api_error')
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Search error:', error);
       setApiNotification({
         type: 'error',
@@ -415,7 +419,7 @@ export default function Home() {
           message: locale === 'ar' ? 'اكتملت نتائج البحث ولا توجد صفحات إضافية متوفرة على الخريطة' : 'No further results available on Google Maps for this query.'
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Load more error:', e);
     } finally {
       setIsLoadingMore(false);
@@ -584,7 +588,7 @@ export default function Home() {
 
   if (authLoading || !user) {
     return (
-      <main className="app-container flex-center" style={{ minHeight: '60vh' }} dir={dir}>
+      <main className="app-container flex-center" dir={dir}>
         <span className="subtext">{locale === 'ar' ? 'جاري التحقق من الجلسة...' : 'Checking session...'}</span>
       </main>
     );
@@ -592,7 +596,7 @@ export default function Home() {
 
   if (proposalLead) {
     return (
-      <main className="app-container studio-fullscreen-container" style={{ padding: 0 }}>
+      <main className="app-container studio-fullscreen-container">
         <ProposalStudio
           lead={proposalLead}
           onBack={() => setProposalLead(null)}
@@ -624,42 +628,48 @@ export default function Home() {
         onToggleTheme={handleToggleTheme}
       />
 
-      <div className="app-main-content">
-        {showPhonePrompt && (
-          <div className="notification-banner banner-warning phone-prompt-banner">
-            <div className="phone-prompt-body">
-              <span>{locale === 'ar' ? 'أضف رقم هاتفك لإكمال حسابك (يُستخدم للتواصل والتنبيهات).' : 'Add your mobile number to complete your account (used for contact & alerts).'}</span>
-              <div className="phone-prompt-row">
-                <input
-                  className="input-field auth-input-ltr phone-prompt-input"
-                  type="tel"
-                  inputMode="tel"
-                  dir="ltr"
-                  placeholder={locale === 'ar' ? 'مثال: 0791234567' : 'e.g. 0791234567'}
-                  value={promptPhone}
-                  onChange={(e) => setPromptPhone(e.target.value)}
-                />
-                <button className="btn btn-primary btn-sm" onClick={savePromptPhone} disabled={promptSaving}>
-                  {promptSaving ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...') : t('action.save')}
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={dismissPhonePrompt}>
-                  {locale === 'ar' ? 'لاحقاً' : 'Later'}
-                </button>
-              </div>
-              {promptError && <span className="phone-prompt-error">{promptError}</span>}
-            </div>
-            <button className="btn-close" onClick={dismissPhonePrompt}>&times;</button>
-          </div>
-        )}
-        {apiNotification && (
-          <div className={`notification-banner banner-${apiNotification.type}`}>
-            <div className="flex-align gap-2">
-              {apiNotification.type === 'success' && <CheckCircle size={18} />}
-              {apiNotification.type === 'error' && <AlertTriangle size={18} />}
-              {apiNotification.type === 'warning' && <Info size={18} />}
-              <span>{apiNotification.message}</span>
-            </div>
-            <button className="btn-close" onClick={() => setApiNotification(null)}>&times;</button>
+      <div className="ui-page">
+        {(showPhonePrompt || apiNotification) && (
+          <div className="ui-stack ui-mb-2">
+            {showPhonePrompt && (
+              <Banner tone="amber" icon={<Info size={18} />}>
+                <div className="phone-prompt-body">
+                  <span>{locale === 'ar' ? 'أضف رقم هاتفك لإكمال حسابك (يُستخدم للتواصل والتنبيهات).' : 'Add your mobile number to complete your account (used for contact & alerts).'}</span>
+                  <div className="phone-prompt-row">
+                    <TextInput
+                      className="auth-input-ltr phone-prompt-input"
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      placeholder={locale === 'ar' ? 'مثال: 0791234567' : 'e.g. 0791234567'}
+                      value={promptPhone}
+                      onChange={(e) => setPromptPhone(e.target.value)}
+                    />
+                    <Button variant="primary" size="sm" onClick={savePromptPhone} disabled={promptSaving}>
+                      {promptSaving ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...') : t('action.save')}
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={dismissPhonePrompt}>
+                      {locale === 'ar' ? 'لاحقاً' : 'Later'}
+                    </Button>
+                  </div>
+                  {promptError && <span className="phone-prompt-error">{promptError}</span>}
+                </div>
+                <button className="btn-close" onClick={dismissPhonePrompt}>&times;</button>
+              </Banner>
+            )}
+            {apiNotification && (
+              <Banner
+                tone={apiNotification.type === 'success' ? 'green' : apiNotification.type === 'error' ? 'red' : 'amber'}
+                icon={
+                  apiNotification.type === 'success' ? <CheckCircle size={18} /> :
+                  apiNotification.type === 'error' ? <AlertTriangle size={18} /> :
+                  <Info size={18} />
+                }
+              >
+                <span>{apiNotification.message}</span>
+                <button className="btn-close" onClick={() => setApiNotification(null)}>&times;</button>
+              </Banner>
+            )}
           </div>
         )}
 
@@ -718,18 +728,18 @@ export default function Home() {
         )}
 
         {leads.length > 0 && (
-          <div className="flex-between" style={{ marginTop: '20px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleClearLeads}>
+          <div className="flex-between">
+            <Button variant="secondary" size="sm" onClick={handleClearLeads}>
               {locale === 'ar' ? 'مسح نتائج الجدول المعروض' : 'Clear Current Table Results'}
-            </button>
+            </Button>
             <div className="flex-align gap-2">
               <span className="text-sm subtext">
                 {locale === 'ar' ? `المعروض حالياً: ${leads.length} محل` : `Displaying: ${leads.length} leads`}
               </span>
               <span className="subtext">•</span>
-              <span className="text-sm text-success" style={{ fontWeight: 600 }}>
+              <strong className="text-sm text-success">
                 {locale === 'ar' ? `الأرشيف المحلي المحفوظ: ${vaultCount} محل` : `Archived in vault: ${vaultCount} leads`}
-              </span>
+              </strong>
             </div>
           </div>
         )}

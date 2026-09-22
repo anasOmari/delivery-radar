@@ -73,7 +73,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 <p className="popup-sub">{selectedLead.category} - {selectedLead.city}</p>
               </div>
               <div className="badge-rating">
-                <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                <Star size={14} fill="var(--status-amber)" color="var(--status-amber)" />
                 <span>{selectedLead.rating}</span>
                 <span className="rating-count">({selectedLead.userRatingsTotal})</span>
               </div>
