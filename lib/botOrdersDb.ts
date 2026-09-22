@@ -10,6 +10,11 @@ function db(): BotDatabase {
   return pool;
 }
 
+export async function bookingStorageAvailable(): Promise<boolean> {
+  try { await db().query('SELECT 1 FROM public.bot_orders LIMIT 1'); return true; }
+  catch { return false; }
+}
+
 export async function claimWebhook(messageId: string): Promise<boolean> {
   const result = await db().query('INSERT INTO public.bot_webhook_receipts(source_message_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING source_message_id', [messageId]);
   return result.rowCount === 1;
