@@ -36,6 +36,7 @@ import {
   DEFAULT_BOT_SERVICES,
   DEFAULT_BOT_PRICING,
   DEFAULT_BOT_RULES,
+  applyBrainDefaults,
 } from '@/lib/chatbotConfig';
 import { saveWhatsAppConfigToSupabase, getWhatsAppConfigFromSupabase } from '@/lib/supabase';
 import { ChatbotModal } from './ChatbotModal';
@@ -47,8 +48,8 @@ interface WhatsAppSettingsModalProps {
 
 export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ onClose, onSaved }) => {
   const { t, locale } = useLanguage();
-  const [config, setConfig] = useState<WhatsAppConfig>(getWhatsAppConfig());
-  const [activeTab, setActiveTab] = useState<'provider' | 'message' | 'automation' | 'chatbot' | 'ai_knowledge'>('provider');
+  const [config, setConfig] = useState<WhatsAppConfig>(() => applyBrainDefaults(getWhatsAppConfig()));
+  const [activeTab, setActiveTab] = useState<'provider' | 'message' | 'automation' | 'chatbot'>('provider');
   const [isTesting, setIsTesting] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -62,11 +63,11 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
       try {
         const dbConfig = await getWhatsAppConfigFromSupabase();
         if (dbConfig && dbConfig.greenapi?.idInstance) {
-          setConfig((prev) => ({
+          setConfig((prev) => (applyBrainDefaults({
             ...prev,
             ...dbConfig,
             provider: dbConfig.provider || 'greenapi',
-          }));
+          }) as WhatsAppConfig));
           saveWhatsAppConfig(dbConfig);
           return;
         }
@@ -76,11 +77,11 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
         const r = await fetch('/api/whatsapp/config');
         const data = await r.json();
         if (data?.config?.greenapi?.idInstance) {
-          setConfig((prev) => ({
+          setConfig((prev) => (applyBrainDefaults({
             ...prev,
             ...data.config,
             provider: data.config.provider || 'greenapi',
-          }));
+          }) as WhatsAppConfig));
         }
       } catch {}
     }
@@ -145,17 +146,21 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
   };
 
   const handleSave = async () => {
-    saveWhatsAppConfig(config);
-    setSaveFeedback(true);
     try {
-      await saveWhatsAppConfigToSupabase(config);
-      await fetch('/api/whatsapp/config', {
+      const saved = await saveWhatsAppConfigToSupabase(config);
+      if (!saved) throw new Error('Could not save to database');
+      const response = await fetch('/api/whatsapp/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
+      if (!response.ok) throw new Error('Could not save server settings');
+      saveWhatsAppConfig(config);
+      setSaveFeedback(true);
     } catch (e) {
       console.warn('Config save error:', e);
+      setTestResult({ success: false, message: locale === 'ar' ? 'تعذر حفظ إعدادات البوت. حاول مرة أخرى.' : 'Could not save bot settings. Try again.' });
+      return;
     }
     if (onSaved) onSaved(config);
     setTimeout(() => {
@@ -211,7 +216,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
   ];
 
   if (showSimulator) {
-    return <ChatbotModal onClose={() => setShowSimulator(false)} />;
+    return <ChatbotModal onClose={() => setShowSimulator(false)} configOverride={config} />;
   }
 
   return (
@@ -321,41 +326,6 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({ on
           >
             <FileText size={15} style={{ color: activeTab === 'message' ? 'var(--whatsapp-color)' : 'inherit' }} />
             <span>{t('whatsapp.tab_message')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('ai_knowledge')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '12px 14px',
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'ai_knowledge' ? '3px solid #F59E0B' : '3px solid transparent',
-              color: activeTab === 'ai_knowledge' ? '#F59E0B' : 'var(--text-tertiary)',
-              fontWeight: activeTab === 'ai_knowledge' ? 700 : 500,
-              fontSize: '0.86rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Sparkles size={15} style={{ color: activeTab === 'ai_knowledge' ? '#F59E0B' : 'inherit' }} />
-            <span>{locale === 'ar' ? '🧠 تدريب الذكاء الاصطناعي (AI Training)' : '🧠 AI Knowledge & Training'}</span>
-            <span
-              style={{
-                fontSize: '0.66rem',
-                padding: '1px 6px',
-                borderRadius: '10px',
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#F59E0B',
-                fontWeight: 700,
-              }}
-            >
-              AI
-            </span>
           </button>
 
           <button

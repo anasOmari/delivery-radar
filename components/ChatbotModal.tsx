@@ -17,16 +17,17 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { processChatbotMessageAI, ChatMessage } from '@/lib/chatbotEngine';
-import { getWhatsAppConfig } from '@/lib/whatsappProviders';
+import { getWhatsAppConfig, WhatsAppConfig } from '@/lib/whatsappProviders';
 
 interface ChatbotModalProps {
   onClose: () => void;
   onOpenSettings?: () => void;
+  configOverride?: WhatsAppConfig;
 }
 
-export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSettings }) => {
+export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSettings, configOverride }) => {
   const { t, locale } = useLanguage();
-  const config = getWhatsAppConfig();
+  const config = configOverride || getWhatsAppConfig();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -49,6 +50,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
 
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
+    const history = messages.filter((_, index) => index > 0);
     if (!text) return;
 
     const userMsg: ChatMessage = {
@@ -68,7 +70,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose, onOpenSetti
         chatbotEnabled: true,
         managerPhone: config.managerPhone || '0788779463',
         aiApiKey: config.aiApiKey,
-      });
+      }, history);
 
       const botMsg: ChatMessage = {
         role: 'bot',

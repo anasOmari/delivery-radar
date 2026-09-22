@@ -5,6 +5,7 @@ import {
   DEFAULT_BOT_SERVICES,
   DEFAULT_BOT_PRICING,
   DEFAULT_BOT_RULES,
+  applyBrainDefaults,
 } from '@/lib/chatbotConfig';
 
 let memoryConfig: any = {
@@ -32,7 +33,7 @@ export async function getServerWhatsAppConfigAsync() {
       .single();
 
     if (!error && data?.value) {
-      const merged = { ...memoryConfig, ...data.value };
+      const merged = applyBrainDefaults({ ...memoryConfig, ...data.value });
       memoryConfig = merged;
       return merged;
     }
@@ -40,7 +41,7 @@ export async function getServerWhatsAppConfigAsync() {
     console.warn('Failed to fetch config from Supabase:', e);
   }
 
-  return memoryConfig;
+  return applyBrainDefaults(memoryConfig);
 }
 
 export function getServerWhatsAppConfig() {
@@ -55,27 +56,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const updated = {
+    const updated = applyBrainDefaults({
       ...memoryConfig,
       ...body,
       greenapi: {
         ...memoryConfig.greenapi,
         ...(body.greenapi || {}),
       },
-    };
+    });
 
-    memoryConfig = updated;
-
-    // Persist to Supabase
-    try {
-      await supabase.from('app_settings').upsert({
+    const { error } = await supabase.from('app_settings').upsert({
         key: 'whatsapp_config',
         value: updated,
         updated_at: new Date().toISOString(),
       });
-    } catch (dbErr) {
-      console.warn('Failed to save config to Supabase:', dbErr);
-    }
+    if (error) throw error;
+    memoryConfig = updated;
 
     return NextResponse.json({ success: true, config: updated });
   } catch (err: any) {

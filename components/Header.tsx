@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu, LogOut, Mail, BadgeCheck } from 'lucide-react';
+import { Building2, Key, Download, Upload, Sun, Moon, FolderKanban, Globe, MessageCircle, Send, Bot, Menu, LogOut, Mail, BadgeCheck, ClipboardList } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -122,6 +122,9 @@ export const Header: React.FC<HeaderProps> = ({
           }
         }}>
         {/* Actions */}
+        {user && <button className="btn btn-secondary" onClick={() => router.push('/orders')}>
+          <ClipboardList size={16} /><span>{locale === 'ar' ? 'طلبات البوت' : 'Bot orders'}</span>
+        </button>}
         <button
           className="btn btn-secondary"
           onClick={() => setShowBrandModal(true)}

@@ -19,6 +19,8 @@ export interface BotSettings {
   botTone?: 'jordanian' | 'formal';
   replyLength?: 'short' | 'balanced';
   historyMessages?: number;
+  /** Transient sender phone (filled from WhatsApp chatId) for the confirmed-order summary. */
+  customerPhone?: string;
 }
 
 export interface ChatMessage {
@@ -67,9 +69,10 @@ export function validateBotSettings(input: unknown): BotSettings {
 export const SHORT_BUSINESS_NAME = 'قطرة الندى للتوصيل والنقل السريع';
 
 /**
- * Default bot "brain": order-intake & booking mindset.
- * Used as fallback whenever the matching settings field is empty, so the bot
- * behaves as a professional order registrar even before the owner saves anything.
+ * Default bot "brain": official booking-system mindset.
+ * Used whenever the matching settings field is empty (or still holds a
+ * superseded older default), so the bot behaves as a professional order
+ * registrar even before the owner saves anything.
  */
 
 /** Field 1 — اسم وهوية المشروع الرسمية */
@@ -86,7 +89,7 @@ export const DEFAULT_BOT_SERVICES = `الشركة: قطرة الندى للتو�
 
 آلية تسجيل الطلبات: عندما يعطيك العميل نقطة الانطلاق ونقطة الوصول والوقت، قم بجمعها فوراً كطلب جديد جاهز للترحيل للإدارة.`;
 
-/** Field 3 — تعديلات الأسعار والعروض الخاصة */
+/** Field 3 — قاعدة البيانات والأسعار القياسية */
 export const DEFAULT_BOT_PRICING = `توصيل داخل المنطقة (مثل الجبيهة): 2 دينار.
 
 توصيل داخل محافظة عمان (مثل من ماركا إلى طبربور): 3 دنانير.
@@ -95,7 +98,7 @@ export const DEFAULT_BOT_PRICING = `توصيل داخل المنطقة (مثل �
 
 (قاعدة الطلب): إذا حدد العميل الانطلاق والوصول داخل عمان (مثلاً من ماركا إلى طبربور)، احسب السعر فوراً بـ 3 دنانير ولا تقل لا أعرف شيئاً.`;
 
-/** Field 4 — توجيهات مخصصة لأسلوب رد الذكاء الاصطناعي */
+/** Field 4 — بروتوكول جمع وتأكيد الطلبات + صيغة الإخراج */
 export const DEFAULT_BOT_RULES = `بروتوكول تفاعل الحجز: عندما يعطيك العميل تفاصيل الطلب تدريجياً (مثلاً: يريد توصيل لبكرة الساعة 8، ثم يحدد الانطلاق من ماركا)، لا تسأله سؤالاً غريباً ولا تعتذر، بل أكمل التسلسل:
 
 اجمع المعطيات: (الوقت: بكرة الساعة 8، الانطلاق: ماركا، الوجهة: طبربور).
@@ -105,3 +108,43 @@ export const DEFAULT_BOT_RULES = `بروتوكول تفاعل الحجز: عند
 رد عليه بصيغة تأكيد الطلب المباشر: "تمام يا غالي، تم تسجيل تفاصيل الطلب: التوصيل بكرة الساعة 8 صباحاً من ماركا إلى طبربور، وأجرة التوصيل ضمن عمان 3 دنانير. هل أثبت الطلب نهائياً وأبعث الكابتن، وهل توجد أي تفاصيل أخرى للطلب (مثل نوع الأغراض)؟"
 
 هذه التعليمات تمنع البوت من "النسيان" أو "الهروب"، وتجعله يمسك بسياق الحوار كمنظومة حجز متكاملة تنتظر الخطوة النهائية لتسجيل الطلب وإرساله للإدارة بنجاح!`;
+
+/**
+ * Migration markers: texts saved from the previous brain version are
+ * auto-upgraded to the new defaults (genuine owner customizations — texts
+ * containing none of these markers — are never touched).
+ */
+const NEW_BRAIN_MARKERS = ['بروتوكول تفاعل الحجز', 'دورك ليس الرد على المعلومات العامة', 'توصيل داخل المنطقة (مثل الجبيهة)'];
+const OLD_BRAIN_MARKERS = [
+  'مسؤول مبيعات واستقبال طلبات',
+  'جاهز للترحيل للإدارة',
+  'تم تسجيل تفاصيل الطلب: التوصيل بكرة',
+  'بروتوكول تفاعل الحجز',
+];
+
+function needsBrainRefresh(value: unknown): boolean {
+  if (typeof value !== 'string' || !value.trim()) return true;
+  const text = value.trim();
+  if (NEW_BRAIN_MARKERS.some(m => text.includes(m))) return false;
+  return OLD_BRAIN_MARKERS.some(m => text.includes(m));
+}
+
+/** Fill empty-or-superseded brain fields with the current defaults (pure, non-mutating). */
+export function applyBrainDefaults<T extends BotSettings>(config: T): T {
+  const base = config as BotSettings;
+  // The two rule fields mirror each other in the settings screen: keep each
+  // genuine customization, refresh legacy/empty ones, and guarantee that at
+  // least one of them carries the current default rules.
+  const freshRule = (v: unknown) => (needsBrainRefresh(v) ? '' : String(v).trim());
+  const keptRules = freshRule(base.customRules);
+  const keptPrompt = freshRule(base.customSystemPrompt);
+  const effectiveRules = keptRules || keptPrompt || DEFAULT_BOT_RULES;
+  return {
+    ...config,
+    businessName: needsBrainRefresh(base.businessName) ? DEFAULT_BOT_IDENTITY : base.businessName,
+    servicesText: needsBrainRefresh(base.servicesText) ? DEFAULT_BOT_SERVICES : base.servicesText,
+    pricingText: needsBrainRefresh(base.pricingText) ? DEFAULT_BOT_PRICING : base.pricingText,
+    customRules: effectiveRules,
+    customSystemPrompt: keptPrompt || (keptRules ? '' : DEFAULT_BOT_RULES),
+  };
+}
